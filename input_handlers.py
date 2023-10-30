@@ -25,28 +25,28 @@ if TYPE_CHECKING:
 
 MOVE_KEYS = {
     # Vi keys.
-    tcod.event.K_h: (-1, 0),
-    tcod.event.K_j: (0, 1),
-    tcod.event.K_k: (0, -1),
-    tcod.event.K_l: (1, 0),
-    tcod.event.K_y: (-1, -1),
-    tcod.event.K_u: (1, -1),
-    tcod.event.K_b: (-1, 1),
-    tcod.event.K_n: (1, 1),
+    tcod.event.KeySym.h: (-1, 0),
+    tcod.event.KeySym.j: (0, 1),
+    tcod.event.KeySym.k: (0, -1),
+    tcod.event.KeySym.l: (1, 0),
+    tcod.event.KeySym.y: (-1, -1),
+    tcod.event.KeySym.u: (1, -1),
+    tcod.event.KeySym.b: (-1, 1),
+    tcod.event.KeySym.n: (1, 1),
 }
 WAIT_KEYS = {
-    tcod.event.K_PERIOD,
-    tcod.event.K_s,
+    tcod.event.KeySym.PERIOD,
+    tcod.event.KeySym.s,
 }
 CURSOR_Y_KEYS = {
-   tcod.event.K_UP: -1,
-   tcod.event.K_DOWN: 1,
-   tcod.event.K_PAGEUP: -10,
-   tcod.event.K_PAGEDOWN: 10,
+   tcod.event.KeySym.UP: -1,
+   tcod.event.KeySym.DOWN: 1,
+   tcod.event.KeySym.PAGEUP: -10,
+   tcod.event.KeySym.PAGEDOWN: 10,
 }
 CONFIRM_KEYS = {
-    tcod.event.K_RETURN,
-    tcod.event.K_KP_ENTER,
+    tcod.event.KeySym.RETURN,
+    tcod.event.KeySym.KP_ENTER,
 }
 
 
@@ -130,12 +130,12 @@ class AskUserEventHandler(EventHandler):
     def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[ActionOrHandler]:
         """By default any key exits this input handler."""
         if event.sym in {  # Ignore modifier keys.
-            tcod.event.K_LSHIFT,
-            tcod.event.K_RSHIFT,
-            tcod.event.K_LCTRL,
-            tcod.event.K_RCTRL,
-            tcod.event.K_LALT,
-            tcod.event.K_RALT,
+            tcod.event.KeySym.LSHIFT,
+            tcod.event.KeySym.RSHIFT,
+            tcod.event.KeySym.LCTRL,
+            tcod.event.KeySym.RCTRL,
+            tcod.event.KeySym.LALT,
+            tcod.event.KeySym.RALT,
         }:
             return None
         return self.on_exit()
@@ -172,7 +172,7 @@ class SelectIndexHandler(AskUserEventHandler):
             self.x, self.y = self.clamp(dx,dy)            
 
             return None
-        elif key in CONFIRM_KEYS or key == tcod.event.K_v:
+        elif key in CONFIRM_KEYS or key == tcod.event.KeySym.v:
             return self.on_index_selected(self.x,self.y)
         elif self.extra_confirm:
             if key == tcod.event.KeySym(ord(self.extra_confirm)):
@@ -332,7 +332,7 @@ class LevelUpEventHandler(AskUserEventHandler):
     def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[ActionOrHandler]:
         player = self.engine.player
         key = event.sym
-        index = key - tcod.event.K_a
+        index = key - tcod.event.KeySym.a
 
         if 0 <= index <= 2:
             if index == 0:
@@ -406,7 +406,7 @@ class InventoryEventHandler(AskUserEventHandler):
     def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[ActionOrHandler]:
         player = self.engine.player
         key = event.sym
-        index = key - tcod.event.K_a
+        index = key - tcod.event.KeySym.a
 
         if 0 <= index <= 26:
             try:
@@ -618,29 +618,29 @@ class MainGameEventHandler(EventHandler):
             return BumpAction(player, dx, dy)
         elif key in WAIT_KEYS:
             return WaitAction(player)
-        elif key == tcod.event.K_ESCAPE:
+        elif key == tcod.event.KeySym.ESCAPE:
             raise SystemExit
-        elif key == tcod.event.K_d and modifier & (tcod.event.KMOD_LSHIFT | tcod.event.KMOD_RSHIFT):
+        elif key == tcod.event.KeySym.d and modifier & (tcod.event.KMOD_LSHIFT | tcod.event.KMOD_RSHIFT):
             return actions.DropLastAction(player)
-        elif key == tcod.event.K_COMMA: #or key == tcod.event.K_g:
+        elif key == tcod.event.KeySym.COMMA: #or key == tcod.event.KeySym.g:
             return actions.PickupAction(player)
-        elif key == tcod.event.K_LESS and modifier & (tcod.event.KMOD_LSHIFT | tcod.event.KMOD_RSHIFT):
+        elif key == tcod.event.KeySym.LESS and modifier & (tcod.event.KMOD_LSHIFT | tcod.event.KMOD_RSHIFT):
             return actions.DescendAction(player)
-        elif key == tcod.event.K_LESS:
+        elif key == tcod.event.KeySym.LESS:
             return actions.AscendAction(player)
-        elif key == tcod.event.K_r:
+        elif key == tcod.event.KeySym.r:
             return actions.Reload(player)
-        elif key == tcod.event.K_t:
+        elif key == tcod.event.KeySym.t:
             return actions.FireAction(player)
-        elif key == tcod.event.K_TAB:
+        elif key == tcod.event.KeySym.TAB:
             # if melee weapon, move towards nearest enemy and attack (no memory yet)
             # if ranged weapon, get into range and fire
             return actions.AutoAttack(player)
-        elif key == tcod.event.K_a and modifier & (tcod.event.KMOD_LCTRL | tcod.event.KMOD_RCTRL):
+        elif key == tcod.event.KeySym.a and modifier & (tcod.event.KMOD_LCTRL | tcod.event.KMOD_RCTRL):
             return actions.SwitchAutoPickup(player)
 
         # ai
-        elif key == tcod.event.K_o:
+        elif key == tcod.event.KeySym.o:
             player.ai = components.ai.ExploreMap(player, player.ai)
             return player.ai
             # return actions_ai.ExploreAIAction(player)
@@ -650,21 +650,21 @@ class MainGameEventHandler(EventHandler):
             return player.ai
 
         # handler
-        elif key == tcod.event.K_p and modifier & (tcod.event.KMOD_LCTRL | tcod.event.KMOD_RCTRL):
+        elif key == tcod.event.KeySym.p and modifier & (tcod.event.KMOD_LCTRL | tcod.event.KMOD_RCTRL):
             return HistoryViewer(self.engine)
-        elif key == tcod.event.K_d:
+        elif key == tcod.event.KeySym.d:
             return InventoryDropHandler(self.engine)
-        elif key == (tcod.event.K_i):
+        elif key == (tcod.event.KeySym.i):
             return InventoryActivateHandler(self.engine)
-        elif key == tcod.event.K_x:
+        elif key == tcod.event.KeySym.x:
             return LookHandler(self.engine)
-        elif key == (tcod.event.K_x) and modifier & (tcod.event.KMOD_LSHIFT | tcod.event.KMOD_RSHIFT):
+        elif key == (tcod.event.KeySym.x) and modifier & (tcod.event.KMOD_LSHIFT | tcod.event.KMOD_RSHIFT):
             return SeeMapHandler(self.engine)
-        elif key == (tcod.event.K_f) and modifier & (tcod.event.KMOD_LCTRL | tcod.event.KMOD_RCTRL):
+        elif key == (tcod.event.KeySym.f) and modifier & (tcod.event.KMOD_LCTRL | tcod.event.KMOD_RCTRL):
             return SearchHandler(self.engine)
-        elif key == (tcod.event.K_g) and modifier & (tcod.event.KMOD_LSHIFT | tcod.event.KMOD_RSHIFT):
+        elif key == (tcod.event.KeySym.g) and modifier & (tcod.event.KMOD_LSHIFT | tcod.event.KMOD_RSHIFT):
             return TravelHandler(self.engine)
-        elif key == (tcod.event.K_f):
+        elif key == (tcod.event.KeySym.f):
             # Use the attack handler of the used ranged weapon
             return player.equipment.fire_event()
 
@@ -685,7 +685,7 @@ class GameOverEventHandler(EventHandler):
         self.on_quit()
     
     def ev_keydown(self, event:tcod.event.KeyDown) ->None:
-        if event.sym == tcod.event.K_ESCAPE:
+        if event.sym == tcod.event.KeySym.ESCAPE:
             self.on_quit()
 
 class HistoryViewer(EventHandler):
@@ -700,7 +700,7 @@ class HistoryViewer(EventHandler):
         super().on_render(renderer)  # Draw the main state as the background.
         console = renderer.console
 
-        log_console = tcod.Console(console.width - 6, console.height - 6)
+        log_console = tcod.console.Console(console.width - 6, console.height - 6)
 
         # Draw a frame with a custom banner title.
         log_console.draw_frame(0, 0, log_console.width, log_console.height)
@@ -732,9 +732,9 @@ class HistoryViewer(EventHandler):
             else:
                 # Otherwise move while staying clamped to the bounds of the history log.
                 self.cursor = max(0, min(self.cursor + adjust, self.log_length - 1))
-        elif event.sym == tcod.event.K_HOME:
+        elif event.sym == tcod.event.KeySym.HOME:
             self.cursor = 0  # Move directly to the top message.
-        elif event.sym == tcod.event.K_END:
+        elif event.sym == tcod.event.KeySym.END:
             self.cursor = self.log_length - 1  # Move directly to the last message.
         else:  # Any other key moves back to the main game state.
             return MainGameEventHandler(self.engine)
@@ -787,14 +787,14 @@ class TravelHandler(AskUserEventHandler):
         player = self.engine.player
         modifier = event.mod
                
-        if key == tcod.event.K_ESCAPE:
+        if key == tcod.event.KeySym.ESCAPE:
             return MainGameEventHandler(self.engine)
-        elif key == tcod.event.K_LESS and modifier & (tcod.event.KMOD_LSHIFT | tcod.event.KMOD_RSHIFT):
+        elif key == tcod.event.KeySym.LESS and modifier & (tcod.event.KMOD_LSHIFT | tcod.event.KMOD_RSHIFT):
             dest_xy = self.engine.game_map.downstairs_location
             player.ai = components.ai.MoveTo(player, player.ai, dest_xy)
             return player.ai
             # return actions_ai.TravelAIAction(player,">")
-        elif key == tcod.event.K_LESS:
+        elif key == tcod.event.KeySym.LESS:
             dest_xy = self.engine.game_map.upstairs_location
             player.ai = components.ai.MoveTo(player, player.ai, dest_xy)
             return player.ai
