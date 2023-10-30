@@ -139,15 +139,15 @@ class RangedWeapon(Equippable):
                 fire_line.pop(0)
                 for [i, j] in fire_line:
                     if self.engine.game_map.get_target_at_location(i, j):
-                        console.tiles_rgb["bg"][self.engine.renderer.shift(i,j)] = color.n_red
-                        console.tiles_rgb["fg"][self.engine.renderer.shift(i,j)] = color.white
+                        console.rgb["bg"][self.engine.renderer.shift(i,j)] = color.n_red
+                        console.rgb["fg"][self.engine.renderer.shift(i,j)] = color.white
                     else:
-                        console.tiles_rgb["fg"][self.engine.renderer.shift(i,j)] = color.n_red
-                        console.tiles_rgb["ch"][self.engine.renderer.shift(i,j)] = ord("*")
+                        console.rgb["fg"][self.engine.renderer.shift(i,j)] = color.n_red
+                        console.rgb["ch"][self.engine.renderer.shift(i,j)] = ord("*")
 
                 for (x,y) in cf.disk_coords(target_xy, self.radius):
-                    console.tiles_rgb["fg"][self.engine.renderer.shift(x,y)] = color.n_red  # add color of weapon 
-                    console.tiles_rgb["ch"][self.engine.renderer.shift(x,y)] = ord("*")
+                    console.rgb["fg"][self.engine.renderer.shift(x,y)] = color.n_red  # add color of weapon 
+                    console.rgb["ch"][self.engine.renderer.shift(x,y)] = ord("*")
                 context.present(console)
                 time.sleep(0.05)
 
@@ -177,11 +177,11 @@ class RangedWeapon(Equippable):
                 fire_line.pop(0)
                 for [i, j] in fire_line:
                     if self.engine.game_map.get_actor_at_location(i, j):
-                        console.tiles_rgb["bg"][self.engine.renderer.shift(i,j)] = color.n_red
-                        console.tiles_rgb["fg"][self.engine.renderer.shift(i,j)] = color.white
+                        console.rgb["bg"][self.engine.renderer.shift(i,j)] = color.n_red
+                        console.rgb["fg"][self.engine.renderer.shift(i,j)] = color.white
                     else:
-                        console.tiles_rgb["fg"][self.engine.renderer.shift(i,j)] = color.n_red
-                        console.tiles_rgb["ch"][self.engine.renderer.shift(i,j)] = ord("*")
+                        console.rgb["fg"][self.engine.renderer.shift(i,j)] = color.n_red
+                        console.rgb["ch"][self.engine.renderer.shift(i,j)] = ord("*")
                 context.present(console)
                 time.sleep(0.05)
         else:

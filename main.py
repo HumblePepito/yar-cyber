@@ -10,6 +10,7 @@ import util.event
 
 import exceptions
 import input_handlers
+
 import color
 import setup_game
 from engine import Engine
@@ -58,7 +59,7 @@ def main() -> None:
         vsync=True,
     )
     # Use of renderer instead of console in order to add both Console & Context to the engine and use it in auto-Handlers
-    renderer = Renderer(context=context, console=tcod.Console(screen_width, screen_height, order="F"))
+    renderer = Renderer(context=context, console=tcod.console.Console(screen_width, screen_height, order="F"))
 
     # Boucle principale !!
     """

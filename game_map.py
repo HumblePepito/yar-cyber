@@ -169,8 +169,8 @@ class GameMap:
         # world_slice, view_slice = self.camera.get_view_slice((self.width,self.height),(view_width,view_height))
         world_slice, view_slice = renderer.camera.get_view_slice((self.width,self.height),(view_width,view_height))
 
-        console.tiles_rgb[0:view_width, 0:view_height] = self.tiles["dark"][0:view_width, 0:view_height]
-        console.tiles_rgb[0:view_width, 0:view_height] = tile_types.SHROUD
+        console.rgb[0:view_width, 0:view_height] = self.tiles["dark"][0:view_width, 0:view_height]
+        console.rgb[0:view_width, 0:view_height] = tile_types.SHROUD
         
         game_view = np.select(
            condlist=[self.visible, self.explored],
@@ -178,7 +178,7 @@ class GameMap:
            default=tile_types.SHROUD,
         )
 
-        console.tiles_rgb[view_slice] = game_view[world_slice]
+        console.rgb[view_slice] = game_view[world_slice]
 
         entities_sorted_for_rendering = sorted(
             self.entities, key=lambda x: x.render_order.value, #reverse=True,

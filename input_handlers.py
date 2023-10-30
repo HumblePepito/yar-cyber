@@ -194,12 +194,12 @@ class SelectIndexHandler(AskUserEventHandler):
         super().on_render(renderer)
         console = renderer.console
         if self.engine.game_map.visible[self.x,self.y]:
-            console.tiles_rgb["bg"][renderer.shift(self.x,self.y)] = color.white
-            console.tiles_rgb["fg"][renderer.shift(self.x,self.y)] = color.black
+            console.rgb["bg"][renderer.shift(self.x,self.y)] = color.white
+            console.rgb["fg"][renderer.shift(self.x,self.y)] = color.black
         else:
             self.engine.message_log.add_message("You can't see here.")
-            console.tiles_rgb["bg"][renderer.shift(self.x,self.y)] = color.gray
-            console.tiles_rgb["fg"][renderer.shift(self.x,self.y)] = color.black
+            console.rgb["bg"][renderer.shift(self.x,self.y)] = color.gray
+            console.rgb["fg"][renderer.shift(self.x,self.y)] = color.black
 
     def on_index_selected(self, x: int, y: int) -> Optional[ActionOrHandler]:
         """Called when an index is selected."""
@@ -217,8 +217,8 @@ class PopupMessage(BaseEventHandler):
         """Render the parent and dim the result, then print the message on top."""
         console = renderer.console
         self.parent.on_render(renderer)
-        console.tiles_rgb["fg"] //= 8
-        console.tiles_rgb["bg"] //= 8
+        console.rgb["fg"] //= 8
+        console.rgb["bg"] //= 8
 
         console.print(
             console.width // 2,
@@ -508,14 +508,14 @@ class SingleRangedAttackHandler(SelectIndexHandler):
 
         for [i, j] in lof.path: 
             if self.engine.game_map.tiles["light"]["ch"][i,j] == ord("#"):
-                console.tiles_rgb["bg"][renderer.shift(i,j)] = color.gray
-                console.tiles_rgb["fg"][renderer.shift(i,j)] = color.white
+                console.rgb["bg"][renderer.shift(i,j)] = color.gray
+                console.rgb["fg"][renderer.shift(i,j)] = color.white
             elif self.engine.game_map.get_actor_at_location(i, j):
-                console.tiles_rgb["bg"][renderer.shift(i,j)] = color.gray
-                console.tiles_rgb["fg"][renderer.shift(i,j)] = color.white
+                console.rgb["bg"][renderer.shift(i,j)] = color.gray
+                console.rgb["fg"][renderer.shift(i,j)] = color.white
             else:
-                console.tiles_rgb["fg"][renderer.shift(i,j)] = color.gray
-                console.tiles_rgb["ch"][renderer.shift(i,j)] = ord("*")
+                console.rgb["fg"][renderer.shift(i,j)] = color.gray
+                console.rgb["ch"][renderer.shift(i,j)] = ord("*")
         
            
 
@@ -553,14 +553,14 @@ class AreaRangedAttackHandler(SelectIndexHandler):
 
         for [i, j] in lof.path:
             if self.engine.game_map.tiles["light"]["ch"][i,j] == ord("#"):
-                console.tiles_rgb["bg"][renderer.shift(i,j)] = color.gray
-                console.tiles_rgb["fg"][renderer.shift(i,j)] = color.white
+                console.rgb["bg"][renderer.shift(i,j)] = color.gray
+                console.rgb["fg"][renderer.shift(i,j)] = color.white
             elif self.engine.game_map.get_actor_at_location(i, j):
-                console.tiles_rgb["bg"][renderer.shift(i,j)] = color.gray
-                console.tiles_rgb["fg"][renderer.shift(i,j)] = color.white
+                console.rgb["bg"][renderer.shift(i,j)] = color.gray
+                console.rgb["fg"][renderer.shift(i,j)] = color.white
             else:
-                console.tiles_rgb["fg"][renderer.shift(i,j)] = color.gray
-                console.tiles_rgb["ch"][renderer.shift(i,j)] = ord("*")
+                console.rgb["fg"][renderer.shift(i,j)] = color.gray
+                console.rgb["ch"][renderer.shift(i,j)] = ord("*")
         
         if lof.end > 0:
             x,y = lof.path[-1]
@@ -572,12 +572,12 @@ class AreaRangedAttackHandler(SelectIndexHandler):
         for i in range(-self.radius, self.radius+1):
             for j in range(-self.radius, self.radius+1):
                 if self.engine.game_map.get_actor_at_location(x+i,y+j):
-                    console.tiles_rgb["bg"][renderer.shift(x+i,y+j)] = color.gray
-                    console.tiles_rgb["fg"][renderer.shift(x+i,y+j)] = color.white
+                    console.rgb["bg"][renderer.shift(x+i,y+j)] = color.gray
+                    console.rgb["fg"][renderer.shift(x+i,y+j)] = color.white
                 else:
                     if self.engine.game_map.tiles["walkable"][x+i,y+j]:
-                        console.tiles_rgb["fg"][renderer.shift(x+i,y+j)] = color.gray
-                        console.tiles_rgb["ch"][renderer.shift(x+i,y+j)] = ord("*")
+                        console.rgb["fg"][renderer.shift(x+i,y+j)] = color.gray
+                        console.rgb["ch"][renderer.shift(x+i,y+j)] = ord("*")
 
 
     def on_index_selected(self, x: int, y: int) -> Optional[Action]:
