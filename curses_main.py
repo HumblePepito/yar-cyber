@@ -42,7 +42,7 @@ def main(stdscr) -> None:
     # log tool
     Log_Format = "%(levelname)s %(asctime)s - %(message)s"
     logging.basicConfig(
-        filename="logfile.log", filemode="w", format=Log_Format, level=logging.ERROR
+        filename="logfile.log", filemode="w", format=Log_Format, level=logging.DEBUG
     )
     logger = logging.getLogger()
     util.var_global.logger = logger
@@ -51,6 +51,14 @@ def main(stdscr) -> None:
     curses.use_default_colors()
     for i in range(0, 16):
         curses.init_pair(i + 1, i, -1)
+    
+    # Same loop in color
+    i=0
+    for bg in range(0,16):
+        for fg in range(0,16):
+            i+=1
+            curses.init_pair(i,fg,bg)
+    
 
     handler: input_handlers.BaseEventHandler = setup_game.MainMenu() # gets back with MainGameEventHandler
 
@@ -82,7 +90,6 @@ def main(stdscr) -> None:
                     renderer.map_height = engine.game_map.height
                     renderer.camera.x = player.x
                     renderer.camera.y = player.y
-
                     engine.logger = logger
                 except AttributeError:
                     engine_ok = False
