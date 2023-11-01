@@ -21,6 +21,7 @@ class SizeClass(Enum):
     MEDIUM = auto()
     BIG = auto()
     HUGE = auto()
+    WALL = auto()
 
 class RenderOrder(Enum):
     CORPSE = auto()
