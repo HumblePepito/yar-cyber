@@ -12,7 +12,7 @@ from entity import Actor, Entity, Feature, Hazard, Item
 from various_enum import ItemType, RenderOrder, SizeClass
 
 wall = Entity(
-    char="#", color=(170, 85, 0), name="Wall", blocks_movement=True
+    char="#", color=(170, 85, 0), name="Wall", blocks_movement=True, size=SizeClass.WALL,
 )
 
 healingPotion = Item(
