@@ -33,7 +33,7 @@ def main() -> None:
     # log tool
     Log_Format = "%(levelname)s %(asctime)s - %(message)s"
     logging.basicConfig(
-        filename="logfile.log", filemode="w", format=Log_Format, level=logging.ERROR
+        filename="logfile.log", filemode="w", format=Log_Format, level=logging.DEBUG
     )
     logger = logging.getLogger()
     util.var_global.logger = logger
@@ -113,8 +113,7 @@ def main() -> None:
                     renderer.map_height = engine.game_map.height
                     renderer.camera.x = player.x
                     renderer.camera.y = player.y
-
-                    engine.logger = logging.getLogger
+                    engine.logger = logger
                 except AttributeError:
                     engine_ok = False
 
@@ -156,7 +155,8 @@ def main() -> None:
                         handler.handle_action(player.ai)
 
             except Exception:  # Handle exceptions in game.
-                traceback.print_exc()  # Print error to stderr.
+                logger.critical(traceback.format_exc())
+                # traceback.print_exc()  # Print error to stderr.
                 # Then print the error to the message log.
                 handler.engine.message_log.add_message(traceback.format_exc(), color.error) # nuance avec isinstance
     except exceptions.QuitWithoutSaving:
