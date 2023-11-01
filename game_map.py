@@ -188,19 +188,10 @@ class GameMap:
             if self.visible[entity.x, entity.y]:
                 console.print(*renderer.shift(x=entity.x,y=entity.y),
                               entity.char, fg=entity.color)
-                # console.print(entity.x-renderer.camera.x+view_width//2,
-                #               entity.y-renderer.camera.y+view_height//2,
-                #               entity.char, fg=entity.color)
-                # console.print(entity.x-self.camera.x+view_width//2,
-                #               entity.y-self.camera.y+view_height//2,
-                #               entity.char, fg=entity.color)
             else:
                 if isinstance(entity, Item) and self.explored[entity.x, entity.y] and self.within_view(*renderer.shift(entity.x, entity.y), view_width,view_height):
                     console.print(*renderer.shift(entity.x, entity.y),
                                   entity.char, fg=entity.color)
-                    # console.print(entity.x-renderer.camera.x+view_width//2,
-                    #             entity.y-renderer.camera.y+view_height//2,
-                    #             entity.char, fg=entity.color)
 
 class GameWorld:
     """
