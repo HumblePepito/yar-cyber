@@ -17,8 +17,7 @@ from various_enum import EquipmentSlot, SizeClass
 from input_handlers import SingleRangedAttackHandler, AreaRangedAttackHandler, ActionOrHandler
 from exceptions import Impossible
 
-if TYPE_CHECKING:
-    from entity import Actor, Entity, Item
+from entity import Actor, Entity, Item
 
 class Equippable(BaseComponent):
     parent: Item
@@ -84,7 +83,7 @@ class RangedWeapon(Equippable):
         
     def activate(self, action: actions.ItemAction) -> None:
         target_xy = action.target_xy
-        shooter = action.entity
+        shooter = action.entity # player or hostile actor
         target = action.target_actor # either Actor, Item or None
 
         if not self.engine.game_map.visible[target_xy]:
@@ -119,18 +118,6 @@ class RangedWeapon(Equippable):
                                 f"Your hear a nearby screaming."
                             )
                         blast_target.fightable.take_damage(damage)
-                # for actor in set(self.engine.game_map.actors) | set(self.engine.game_map.features):
-                #     if actor.distance(*target_xy) <= self.radius:
-                #         damage = self.damage_calculation(shooter, target, 0)
-                #         if actor.is_visible:
-                #             self.engine.message_log.add_message(
-                #                 f"The {actor.name} is engulfed in a fiery explosion, taking {damage} damage!"
-                #             )
-                #         else:
-                #             self.engine.message_log.add_message(
-                #                 f"Your hear a nearby screaming."
-                #             )
-                #         actor.fightable.take_damage(damage)
                         
                 # Animation
                 # TODO move to renderer or other dedicated module/class
@@ -153,10 +140,15 @@ class RangedWeapon(Equippable):
 
             else:
                 if target == None:
-                    self.engine.message_log.add_message("You shoot an empty space.")
+                    self.engine.message_log.add_message(f"{shooter.name.capitalize()} shoots an empty space.")
                     self.current_clip -= 1
                     return
-                        
+
+                if target.name == "Wall":
+                    self.engine.message_log.add_message(f"{shooter.name.capitalize()}'s shot hits the wall!.")
+                    self.current_clip -= 1
+                    return
+
                 damage = self.damage_calculation(shooter, target,hit_margin)
 
                 # damage = self.attack_bonus - target.fightable.armor
@@ -173,9 +165,10 @@ class RangedWeapon(Equippable):
                     self.engine.message_log.add_message(f"{attack_desc} but does no damage.", attack_color)
 
                 # Animation
-                fire_line = tcod.los.bresenham((shooter.x, shooter.y),target_xy).tolist()
-                fire_line.pop(0)
-                for [i, j] in fire_line:
+                # fire_line = tcod.los.bresenham((shooter.x, shooter.y),target_xy).tolist()
+                # fire_line.pop(0)
+                lof = self.gamemap.fire_line.get_path()
+                for [i, j] in lof:
                     if self.engine.game_map.get_actor_at_location(i, j):
                         console.rgb["bg"][self.engine.renderer.shift(i,j)] = color.n_red
                         console.rgb["fg"][self.engine.renderer.shift(i,j)] = color.white
@@ -193,13 +186,27 @@ class RangedWeapon(Equippable):
         # use ammunition
         self.current_clip -= 1
 
+        # log combat information
+        if target and self.engine.logger.level <= 20: # 20 for INFO messages
+            armor_suit = None
+            ATT, DEF, COV = self.gamemap.fire_line.get_hit_stat(target)
+            try:
+                armor = target.fightable.armor
+            except AttributeError:
+                armor = "na"
+            self.engine.logger.info(msg=f"*** {shooter.name.upper()} fights {target.name.upper()}.")
+            self.engine.logger.info(msg=f"Shooter - ATT:{ATT} WEAPON:{self.parent.name}({self.base_damage})")
+            self.engine.logger.info(msg=f"Shooter - bend:{shooter.bend})")
+            self.engine.logger.info(msg=f"Target  - DEF:{DEF} COV:{COV} {[entity.name for entity in self.gamemap.fire_line.entities]}")
+            self.engine.logger.info(msg=f"Target  - AC: {armor} SUIT:{armor_suit}") #{if isinstance(target.equipment.}.")
+            self.engine.logger.info(msg=f"HitMargin:{hit_margin} Damage:{damage}")
+
     def hit_calculation(self, shooter: Actor, target: Entity) -> Tuple(int, Entity):
         """ Combat calculation
         Returns
             int: None = missed, >=0 = hit margin
             entity: who is hit"""
         fire_line = self.gamemap.fire_line
-
 
         if target:
             base_attack, base_defense, cover = fire_line.get_hit_stat(target)
@@ -255,7 +262,8 @@ class RangedWeapon(Equippable):
                         hit_margin = 0
 
         if target is None and hit_margin is None:
-            #TODO : define the hit in fov or out fov
+            # stray fire
+            # TODO : define the hit in fov or out fov
             pass
 
         return hit_margin, target

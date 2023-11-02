@@ -5,6 +5,9 @@ from typing import Optional, TYPE_CHECKING
 from tcod.map import compute_fov
 import tcod.constants
 
+from logging import Logger
+
+
 #from actions import EscapeAction, MovementAction, BumpAction, MeleeAction
 from render_functions import render_ascii_bar
 from message_log import MessageLog
@@ -28,11 +31,7 @@ class Engine:
         self.player = player
         self.renderer: Renderer = None
         self.message_log = MessageLog()
-        self.logger = None # intialisé par main
-
-        # # size of window's view
-        # self.view_width = 39 # 59
-        # self.view_height = 23 # 39
+        self.logger: Logger = None
 
     def handle_enemy_turns(self) -> None:
         for entity in (set(self.game_map.actors) - {self.player}) | set(self.game_map.hazards):  # not only actors; TOODO : and features ?

@@ -105,14 +105,14 @@ def main() -> None:
 
             if not engine_ok:
                 try:
+                    # Some initialization
                     handler.engine.message_log.add_message("Engine initialized",color.debug)
                     engine_ok = True
                     engine: Engine = handler.engine
-                    player = engine.player
                     renderer.map_width = engine.game_map.width
                     renderer.map_height = engine.game_map.height
-                    renderer.camera.x = player.x
-                    renderer.camera.y = player.y
+                    renderer.camera.x = engine.player.x
+                    renderer.camera.y = engine.player.y
                     engine.logger = logger
                 except AttributeError:
                     engine_ok = False
@@ -123,42 +123,43 @@ def main() -> None:
                 renderer.context.present(renderer.console)
 
             try:
+                # menus before game start
                 if not engine_ok:   # menus before game start
                         for event in util.event.wait():
                             #context.convert_event(event) # for mouse
                             handler = handler.handle_events(event)
-                elif engine_ok and not player.ai.is_auto:   # normal mode
+                # normal mode
+                elif engine_ok and not engine.player.ai.is_auto:
                         go_draw = False
                         for event in util.event.wait():
                             if isinstance(event, tcod.event.KeyDown):
                                 go_draw = True
                             handler = handler.handle_events(event)
+                # auto mode
                 else:
                     if engine.player.ai.is_auto:
                         for event in util.event.get():
                             # Stop auto if a key is pressed
                             if isinstance(event, tcod.event.KeyDown):
-                                player.ai.is_auto = False
-                                engine.message_log.add_message(f"Auto-mode {player.ai.is_auto}",color.debug)
+                                engine.player.ai.is_auto = False
+                                engine.message_log.add_message(f"Auto-mode {engine.player.ai.is_auto}",color.debug)
                                 handler = MainGameEventHandler(engine)
 
                         ##### Events that stops the auto loop #####
                         # Check FOV
-                        if player.see_actor:
-                            player.ai.is_auto = False
-                            engine.message_log.add_message(f"Auto-mode {player.ai.is_auto}",color.debug)
+                        if engine.player.see_actor:
+                            engine.player.ai.is_auto = False
+                            engine.message_log.add_message(f"Auto-mode {engine.player.ai.is_auto}",color.debug)
                             handler = MainGameEventHandler(engine)
                         # Check if player is still alive (needless but just in case)
-                        if not player.is_alive:
-                            handler = GameOverEventHandler(engine)
+                        # if not engine.player.is_alive:
+                        #     handler = GameOverEventHandler(engine)
                         
-                        handler.handle_action(player.ai)
+                        handler.handle_action(engine.player.ai)
 
             except Exception:  # Handle exceptions in game.
                 logger.critical(traceback.format_exc())
-                # traceback.print_exc()  # Print error to stderr.
-                # Then print the error to the message log.
-                handler.engine.message_log.add_message(traceback.format_exc(), color.error) # nuance avec isinstance
+                handler.engine.message_log.add_message("Exception raised at Main level. Check logfile.", color.error) # nuance avec isinstance    
     except exceptions.QuitWithoutSaving:
         raise
     except SystemExit:  # Save and quit.
