@@ -239,7 +239,7 @@ class FireAction(Action):
        * Get_fire_action complete the ItemAction with the target through the xxxAttackIndexHandler
        * Resolve damage."""
 
-    def __init__(self, entity: Actor, target: Actor) -> None:
+    def __init__(self, entity: Actor, target: Optional[Actor] = None) -> None:
         super().__init__(entity)
         self.item = entity.equipment.weapon  
         self.target = target 
