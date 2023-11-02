@@ -116,8 +116,8 @@ class Equipment(BaseComponent):
         ranged_weapon: RangedWeapon = self.weapon.equippable
 
         try:
-            # purge combat stats TODO : is the good place??
-            self.parent.gamemap.fire_line.combat_stat = {}
+            # # purge combat stats TODO : is the good place??
+            # self.parent.gamemap.fire_line.combat_stat = {}
             
             return ranged_weapon.get_fire_action(shooter)
         except AttributeError:

@@ -173,7 +173,7 @@ class SelectIndexHandler(AskUserEventHandler):
             self.x, self.y = self.clamp(dx,dy)            
 
             return None
-        elif key in CONFIRM_KEYS or key == tcod.event.KeySym.v:
+        elif key in CONFIRM_KEYS or key == tcod.event.KeySym.v: # TODO : supress v for lookhandler and use extra_confirm
             return self.on_index_selected(self.x,self.y)
         elif self.extra_confirm:
             if key == tcod.event.KeySym(ord(self.extra_confirm)):
@@ -185,7 +185,7 @@ class SelectIndexHandler(AskUserEventHandler):
             return super().ev_keydown(event)
 
     def clamp(self, dx,dy) -> Tuple[int,int]:
-        """Clamp the cursor index to the map size."""
+        """Clamp the cursor index to the map size.""" # TODO : to the view size...!
         return (max(0, min(self.x+dx, self.engine.game_map.width - 1)),
                 max(0, min(self.y+dy, self.engine.game_map.height - 1)))
 
@@ -227,7 +227,7 @@ class PopupMessage(BaseEventHandler):
             self.text,
             fg=color.white,
             bg=color.black,
-            alignment=tcod.CENTER,
+            alignment=libtcodpy.CENTER,
         )
 
     def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[BaseEventHandler]:
@@ -479,44 +479,47 @@ class SingleRangedAttackHandler(SelectIndexHandler):
     ):
         super().__init__(engine=engine, default_select=default_select, extra_confirm=extra_confirm)
         self.callback = callback
+        self.engine.game_map.fire_line.compute(shooter= self.engine.player, target_xy=(self.x, self.y))
+        self.engine.logger.debug(msg=f"COV: {[entity.name for entity in self.engine.game_map.fire_line.entities]}")
 
     def on_index_selected(self, x: int, y: int) -> Optional[Action]:
         return self.callback((x, y))
 
     def clamp(self, dx,dy) -> Tuple[int,int]:
-        """Clamp the cursor index to the visible area."""
-        if not self.engine.game_map.visible[self.x+dx,self.y+dy]:
-            return (self.x, self.y)
+        """Clamp the cursor index to the view area."""
+        return (max(max(self.engine.player.x-self.engine.renderer.view_width//2, 0), min(self.engine.player.x+self.engine.renderer.view_width//2,min(self.x+dx, self.engine.game_map.width - 1))),
+                max(max(self.engine.player.y-self.engine.renderer.view_height//2, 0), min(self.engine.player.y+self.engine.renderer.view_height//2,min(self.y+dy, self.engine.game_map.width - 1))))
 
-        return (max(0, min(self.x+dx, self.engine.game_map.width - 1)),
-                max(0, min(self.y+dy, self.engine.game_map.height - 1)))
+    def ev_keydown(self, event: tcod.event.KeyDown) -> ActionOrHandler | None:
+        action_handler= super().ev_keydown(event)
+        if self.engine.game_map.visible[self.x,self.y]:
+            self.engine.game_map.fire_line.compute(shooter= self.engine.player, target_xy=(self.x, self.y))
+            self.engine.logger.debug(msg=f"COV: {[entity.name for entity in self.engine.game_map.fire_line.entities]}")
+
+        return action_handler
 
     def on_render(self, renderer: Renderer) -> None:
         super().on_render(renderer)
-        console = renderer.console
+        
+        if self.engine.game_map.visible[self.x,self.y]:
+            console = renderer.console
 
-        # fire_line: List = tcod.los.bresenham((self.engine.player.x, self.engine.player.y), (self.x, self.y)).tolist()
-        # fire_line: List = cf.move_path(map_fov=self.engine.game_map.tiles, shooter_xy=(self.engine.player.x, self.engine.player.y),target_xy=(self.x, self.y))["path"].squeeze(axis=(1,)).tolist() 
-        # fire_line.pop(0)
-        # fire_line = cf.fire_line(map_fov=self.engine.game_map.tiles, shooter_xy=(self.engine.player.x, self.engine.player.y),target_xy=(self.x, self.y))
-        lof = self.engine.game_map.fire_line.compute(shooter= self.engine.player, target_xy=(self.x, self.y))
+            # fire_line: List = tcod.los.bresenham((self.engine.player.x, self.engine.player.y), (self.x, self.y)).tolist()
+            # fire_line: List = cf.move_path(map_fov=self.engine.game_map.tiles, shooter_xy=(self.engine.player.x, self.engine.player.y),target_xy=(self.x, self.y))["path"].squeeze(axis=(1,)).tolist() 
+            # fire_line.pop(0)
+            # fire_line = cf.fire_line(map_fov=self.engine.game_map.tiles, shooter_xy=(self.engine.player.x, self.engine.player.y),target_xy=(self.x, self.y))
+            lof = self.engine.game_map.fire_line
 
-        # Combat stat
-        if lof.target and lof.target != lof.shooter:
-            ATT, DEF, COV = lof.get_hit_stat(target=lof.target)
-            # console.print(x=0,y=25,string=f"ATT: {ATT} vs DEF: {DEF} + COV: {COV} ")
-            console.print(x=40,y=5,string=f"ATT: {ATT} vs DEF: {DEF} + COV: {COV} ")
-
-        for [i, j] in lof.path: 
-            if self.engine.game_map.tiles["light"]["ch"][i,j] == ord("#"):
-                console.rgb["bg"][renderer.shift(i,j)] = color.gray
-                console.rgb["fg"][renderer.shift(i,j)] = color.white
-            elif self.engine.game_map.get_actor_at_location(i, j):
-                console.rgb["bg"][renderer.shift(i,j)] = color.gray
-                console.rgb["fg"][renderer.shift(i,j)] = color.white
-            else:
-                console.rgb["fg"][renderer.shift(i,j)] = color.gray
-                console.rgb["ch"][renderer.shift(i,j)] = ord("*")
+            for [i, j] in lof.path: 
+                if self.engine.game_map.tiles["light"]["ch"][i,j] == ord("#"):
+                    console.rgb["bg"][renderer.shift(i,j)] = color.gray
+                    console.rgb["fg"][renderer.shift(i,j)] = color.white
+                elif self.engine.game_map.get_target_at_location(i, j):
+                    console.rgb["bg"][renderer.shift(i,j)] = color.gray
+                    console.rgb["fg"][renderer.shift(i,j)] = color.white
+                else:
+                    console.rgb["fg"][renderer.shift(i,j)] = color.gray
+                    console.rgb["ch"][renderer.shift(i,j)] = ord("*")
         
            
 
@@ -534,15 +537,18 @@ class AreaRangedAttackHandler(SelectIndexHandler):
         super().__init__(engine=engine, default_select=default_select, extra_confirm=extra_confirm)
         self.radius = radius
         self.callback = callback
+        self.engine.game_map.fire_line.compute(shooter= self.engine.player, target_xy=(self.x, self.y))
 
     def clamp(self, dx,dy) -> Tuple[int,int]:
-        """Clamp the cursor index to the visible area."""
-        if not self.engine.game_map.visible[self.x+dx,self.y+dy]:
-            return (self.x, self.y)
+        """Clamp the cursor index to the view area."""
+        return (max(max(self.engine.player.x-self.engine.renderer.view_width//2, 0), min(self.engine.player.x+self.engine.renderer.view_width//2,min(self.x+dx, self.engine.game_map.width - 1))),
+                max(max(self.engine.player.y-self.engine.renderer.view_height//2, 0), min(self.engine.player.y+self.engine.renderer.view_height//2,min(self.y+dy, self.engine.game_map.width - 1))))
 
-        return (max(0, min(self.x+dx, self.engine.game_map.width - 1)),
-                max(0, min(self.y+dy, self.engine.game_map.height - 1)))
+    def ev_keydown(self, event: tcod.event.KeyDown) -> ActionOrHandler | None:
+        action_handler= super().ev_keydown(event)
+        self.engine.game_map.fire_line.compute(shooter= self.engine.player, target_xy=(self.x, self.y))
 
+        return action_handler
 
     def on_render(self, renderer: Renderer) -> None:
         """Highlight the zone under the cursor."""
@@ -550,13 +556,13 @@ class AreaRangedAttackHandler(SelectIndexHandler):
         super().on_render(renderer)
         console = renderer.console
 
-        lof = self.engine.game_map.fire_line.compute(shooter= self.engine.player, target_xy=(self.x, self.y))
+        lof = self.engine.game_map.fire_line
 
         for [i, j] in lof.path:
             if self.engine.game_map.tiles["light"]["ch"][i,j] == ord("#"):
                 console.rgb["bg"][renderer.shift(i,j)] = color.gray
                 console.rgb["fg"][renderer.shift(i,j)] = color.white
-            elif self.engine.game_map.get_actor_at_location(i, j):
+            elif self.engine.game_map.get_target_at_location(i, j):
                 console.rgb["bg"][renderer.shift(i,j)] = color.gray
                 console.rgb["fg"][renderer.shift(i,j)] = color.white
             else:
@@ -572,7 +578,7 @@ class AreaRangedAttackHandler(SelectIndexHandler):
 
         for i in range(-self.radius, self.radius+1):
             for j in range(-self.radius, self.radius+1):
-                if self.engine.game_map.get_actor_at_location(x+i,y+j):
+                if self.engine.game_map.get_target_at_location(x+i,y+j):
                     console.rgb["bg"][renderer.shift(x+i,y+j)] = color.gray
                     console.rgb["fg"][renderer.shift(x+i,y+j)] = color.white
                 else:
@@ -631,8 +637,8 @@ class MainGameEventHandler(EventHandler):
             return actions.AscendAction(player)
         elif key == tcod.event.KeySym.r:
             return actions.Reload(player)
-        elif key == tcod.event.KeySym.t:
-            return actions.FireAction(player)
+        # elif key == tcod.event.KeySym.t:
+        #     return actions.FireAction(player)
         elif key == tcod.event.KeySym.TAB:
             # if melee weapon, move towards nearest enemy and attack (no memory yet)
             # if ranged weapon, get into range and fire

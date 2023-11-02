@@ -76,7 +76,7 @@ class ItemAction(Action):
         """Invoke the items ability, this action will be given to provide context."""
         # TODO : warning, activate is not for all equippable
         if self.item.equippable:
-            self.item.equippable.activate(self)
+            self.item.equippable.activate(self)  # TODO : check if still relevant
         if self.item.consumable:
             self.item.consumable.activate(self)
 
@@ -204,7 +204,7 @@ class MovementAction(ActionWithDirection):
 
         self.entity.move(self.dx, self.dy)
          
-        # Player only (for monster, check ai)
+        # Player only : camera and pickup (for monster, check ai)
         if self.engine.player == self.entity:
             self.engine.renderer.camera.move(self.dx, self.dy)
             # while ( self.engine.game_map.get_item_at_location(self.entity.x, self.entity.y)
@@ -233,13 +233,13 @@ class BumpAction(ActionWithDirection):
             return MovementAction(self.entity, self.dx, self.dy).perform()
 
 class FireAction(Action):
-    """ The Fire action fires the equipped ranged weapon on the nearest target.
+    """ The Fire action fires the equipped ranged weapon on the nearest target unless target is provided
        * Verifies the weapon in hand
        * Gets the item action with a target through get_fire_action
        * Get_fire_action complete the ItemAction with the target through the xxxAttackIndexHandler
        * Resolve damage."""
 
-    def __init__(self, entity: Actor, target: Optional[Actor] = None) -> None:
+    def __init__(self, entity: Actor, target: Actor) -> None:
         super().__init__(entity)
         self.item = entity.equipment.weapon  
         self.target = target 
@@ -250,29 +250,40 @@ class FireAction(Action):
             self.ranged_weapon = None
 
     def perform(self) -> None:
+        # print(f"combat_stat #{len(self.engine.game_map.fire_line.combat_stat)}.")   
         if not self.ranged_weapon:
             raise exceptions.Impossible("You must have a working ranged weapon.")
         if self.ranged_weapon.current_clip == 0:
-            raise exceptions.Impossible("No more ammo. Reload.")
+            raise exceptions.Impossible("No more ammo. Reload.") # TODO : what happens for monters ?
 
-        # nearest monster if no target provided
-        if not self.target:
-            min_dist: float = 100
-            dist: float = 0
+        # only in auto_attack
+        # # nearest monster if no target provided
+        # if not self.target:
+        #     min_dist: float = 100
+        #     dist: float = 0
 
-            for actor in set(self.engine.game_map.visible_actors) - {self.entity}:
-                dist = self.entity.distance(actor.x, actor.y)
-                if dist < min_dist:
-                    min_dist = dist
-                    self.target = actor
+        #     for actor in set(self.engine.game_map.visible_actors) - {self.entity}:
+        #         dist = self.entity.distance(actor.x, actor.y)
+        #         if dist < min_dist:
+        #             min_dist = dist
+        #             self.target = actor
 
-        if self.target == None:
-            raise exceptions.Impossible("No visible target.")
+        # if self.target == None:
+        #     raise exceptions.Impossible("No visible target.")
         if self.entity.distance(self.target.x, self.target.y) > self.ranged_weapon.base_range:
             raise exceptions.Impossible("Target is too far away.")
 
+        """ fire-line has been computed by
+         * either the fire handler
+         * either the autattack
+         * either the ai
+        target is now superseded by the computed target of fire_line
+        """
+        
+        # self.engine.game_map.fire_line.compute(shooter=self.entity, target_xy=(self.target.x, self.target.y))
+        
         # Instead of dealing directly the damage computation, use fonction from the eqquipable
-        item_action = ItemAction(self.entity, self.ranged_weapon.parent, (self.target.x, self.target.y))
+        item_action = ItemAction(self.entity, self.ranged_weapon.parent, tuple(self.engine.game_map.fire_line.path[-1]))
 
         self.ranged_weapon.activate(item_action)
 
@@ -303,6 +314,7 @@ class AutoAttack(FireAction):
             raise exceptions.Impossible("No enemy in sight.")
 
         # nearest enemy is target
+        target = None
         min_dist = 100
         for actor in set(self.engine.game_map.visible_actors) - {self.entity}:
             dist = self.entity.distance(actor.x, actor.y)
@@ -311,6 +323,9 @@ class AutoAttack(FireAction):
                 min_dist = dist
                 target = actor
 
+        if target == None:
+            raise exceptions.Impossible("No visible target.")
+        
         # Melee Weapon  // TODO: deal bare handed fight
         if not self.item.equippable.is_ranged:            
             path = tcod.los.bresenham((self.entity.x, self.entity.y),(target.x, target.y)).tolist()
@@ -326,7 +341,7 @@ class AutoAttack(FireAction):
                 x, y = path[1]
                 return MovementAction(entity=self.entity, dx=x-self.entity.x, dy=y-self.entity.y).perform()
             else:
-                return FireAction(self.entity).perform()
+                return FireAction(self.entity, target).perform()
                 
 class SwitchAutoPickup(Action):
     def perform(self) -> None:

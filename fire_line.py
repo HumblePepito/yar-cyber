@@ -26,7 +26,7 @@ MOVE_KEYS = {
 }
 
 class FireLine:
-
+    parent: GameMap
     def __init__(self,game_map: GameMap):
         self.game_map = game_map
         self.shooter:Actor = None
@@ -37,29 +37,35 @@ class FireLine:
         self.path: List[Tuple[int, int]]
         self.end: int
         self.entities: List[Entity] = []
-        self.combat_stat: Dict # TODO : populate each time a new entity is aimed at
+        self.combat_stat: Dict = {}# TODO : populate each time a new entity is aimed at
 
 
 
-    def compute(self, shooter: Entity, target_xy: Tuple[int, int]) -> FireLine:
+    def compute(self, shooter: Entity, target_xy: Tuple[int, int]) -> None:
+        """ There is only ONE fire line object
+        Compute updates all stats of the fire line based on `shooter` and `target _xy`
+           * `path`: as a (x,y) list, without the shooter, with the target
+           * `end`: last square that will be hit (in case of walls)
+           * `target` if exists (either Actor or Feature)
+           * `entities`: list of entities between shooter and target"""
         self.shooter = shooter
         self.shooter_xy = (shooter.x, shooter.y)
         self.target_xy = target_xy
-
-        self.target = self.game_map.get_target_at_location(*target_xy) 
         
         self.path = self.get_path()
-        self.end = self.get_end()
+        if self.get_end():
+            self.end = self.get_end()
+            self.target_xy = self.path[self.end]
+        self.target = self.game_map.get_target_at_location(*self.target_xy)
         self.path = self.path[0:self.end+1]
         self.entities = self.get_entities()
 
-        
-        return self
+        return
 
     def get_path(self) -> List[Tuple[int, int]]:  #np.ndarray:
-        """Computes the line of fire with cover.
+        """Computes the path of the line of fire.
         Does not include the shooter
-        By default, a bresenham line, but also when hunkering, or with a wall in between, a slight bend to avoid the wall.
+        By default, a bresenham line, but includes a slight bend to avoid the wall (destroys cover)
         
         >>>    S***....  and  S..#....  and S#.....   
         >>>    ....***T       .******T      .***..
@@ -81,37 +87,37 @@ class FireLine:
         This will define the two bending position if direct line of fire is not available
         """
         
-        line_cover = 15
+        wall_cover = 15
         result = []
         is_bend = False
         bend = ""
 
         # Base case : shooter and target free of walls
         fire_line = tcod.los.bresenham(self.shooter_xy, self.target_xy).tolist()
-        line_cover_tmp = 0
+        wall_cover_tmp = 0
     
         for idx,[i, j] in enumerate(reversed(fire_line[1:-1])):
             # check if any wall is in between, starting from the end. Only one wall near target is OK (distance 1 or 2). 
             if not self.game_map.tiles["walkable"][i,j]:
                 if idx == 0:
-                    line_cover_tmp = 1
-                elif idx == 1 and line_cover_tmp == 0:
-                    line_cover_tmp = 1
+                    wall_cover_tmp = 1
+                elif idx == 1 and wall_cover_tmp == 0:
+                    wall_cover_tmp = 1
                 else:
-                    line_cover_tmp = 15
+                    wall_cover_tmp = 15
                     break
 
         # if clear line of fire, we won't get better.
         # And no need to bend if shooter and target are aligned : we won't get better either
-        if line_cover_tmp == 0 or self.shooter.x == self.target_xy[0] or self.shooter.y == self.target_xy[1]:  #TODO : check if diag must also be tested
-            # print(f"bend {is_bend} - linecover {line_cover_tmp}")
+        if wall_cover_tmp == 0 or self.shooter.x == self.target_xy[0] or self.shooter.y == self.target_xy[1]:  #TODO : check if diag must also be tested
+            # Direct shot! 
             self.shooter.bend = bend
             return fire_line[1:]
 
-        if line_cover_tmp == 1:
-            result = fire_line[1:]
-            line_cover = line_cover_tmp
-
+        # we keep current results and try to bend afterwards
+        result = fire_line[1:]
+        self.shooter.bend = bend
+        wall_cover = wall_cover_tmp
 
         # define target sector (player is 0,0, target is x,y). No need to check equality
         x = self.target_xy[0] - self.shooter.x
@@ -148,36 +154,46 @@ class FireLine:
                 continue
 
             fire_line = tcod.los.bresenham((bend_x,bend_y), self.target_xy).tolist()
-            line_cover_tmp = 0
+            wall_cover_tmp = 0
         
-            for [i, j] in reversed(fire_line[1:-1]): 
-                # check if any wall is in between
-                # if ok, return the fire line
+            # for [i, j] in reversed(fire_line[1:-1]): 
+            #     # check if any wall is in between
+            #     # if ok, return the fire line
+            #     if not self.game_map.tiles["walkable"][i,j]:
+            #         wall_cover_tmp += 1
+            for idx,[i, j] in enumerate(reversed(fire_line[1:-1])):
+                # check if any wall is in between, starting from the end. Only one wall near target is OK (distance 1 or 2). 
                 if not self.game_map.tiles["walkable"][i,j]:
-                    line_cover_tmp += 1
+                    if idx == 0:
+                        wall_cover_tmp = 1
+                    elif idx == 1 and wall_cover_tmp == 0:
+                        wall_cover_tmp = 1
+                    else:
+                        wall_cover_tmp = 15
+                        break
 
-            if line_cover_tmp == 0:
-                line_cover = 0
+            if wall_cover_tmp == 0:
                 is_bend = True
                 self.shooter.bend = key
-                # print(f"bend {key} - linecover {line_cover}")
                 result = fire_line
                 return result
-            elif line_cover_tmp < line_cover:
+            elif wall_cover_tmp < wall_cover:
+                # means that still position led to 15 and we are now at 1
                 is_bend = True
                 self.shooter.bend = key
-                # print(f"bend {key} - linecover {line_cover}")
-                line_cover = line_cover_tmp
-                result = fire_line
-        
-        # print(f"bend {is_bend} - linecover {line_cover}")
-        if is_bend:
-            self.shooter.bend = key
+                wall_cover = wall_cover_tmp
+                result = fire_line      
+        # print(f"bend {is_bend} - linecover {wall_cover}")
+        # if is_bend:
+        #     self.shooter.bend = key
         return result
 
     def get_end(self) -> int:
-        """Get the last index of the line of fire"""
+        """Get the last index of the line of fire.
+        * If two or more walls are in the line of fire, the first one is the end
+        * If no walls, return None"""
         is_blocked = False
+        # TODO : use pythonic way with enumerate
         idx = 1
         for [i, j] in self.path[1:]:
             if not self.game_map.tiles["walkable"][i,j]:
@@ -188,17 +204,14 @@ class FireLine:
 
             idx += 1
         
-        return idx-1
+        return None
     
     def get_entities(self) -> List[Entity]:
         """Gets the entities along the line of fire, only features, actor and walls.
-        Does not include the target"""
+        Does not include the target, nor the shooter."""
         result = []
         for [i, j] in self.path[:-1]:
-            entity = self.game_map.get_actor_at_location(i,j)
-            if entity:
-                result.append(entity)
-            entity = self.game_map.get_feature_at_location(i,j)
+            entity = self.game_map.get_target_at_location(i,j)
             if entity:
                 result.append(entity)
             if not self.game_map.tiles["walkable"][i,j]:
@@ -206,13 +219,6 @@ class FireLine:
                 result.append(entity)
 
         return result
-    
-    def get_cover(self) -> int:
-        """ Cover is a percentage from 0 (clear) to 99 (fully covered).
-        There is always a 1% chance to hit.
-        Each entity present on the path of fire provide a cover based on its size attribute"""
-        pass
-        # add cover_bonus to entities and use it
     
     def get_hit_stat(self, target: Entity) -> Tuple[int, int, int]:
         """ Provide ATT, DEF and COVER for the designated target
@@ -234,7 +240,9 @@ class FireLine:
             base_attack = self.shooter.fightable.attack
             base_defense = target.fightable.defense
             
-            self.combat_stat[target] = (base_attack, base_defense, cover)
+            if target is not self.game_map.engine.player:
+                self.combat_stat[target] = (base_attack, base_defense, cover)
+            
             return (base_attack, base_defense, cover)
 
             
