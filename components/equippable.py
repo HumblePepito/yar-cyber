@@ -187,19 +187,21 @@ class RangedWeapon(Equippable):
         self.current_clip -= 1
 
         # log combat information
-        if target and self.engine.logger.level <= 20: # 20 for INFO messages
-            armor_suit = None
-            ATT, DEF, COV = self.gamemap.fire_line.get_hit_stat(target)
-            try:
-                armor = target.fightable.armor
-            except AttributeError:
-                armor = "na"
-            self.engine.logger.info(msg=f"*** {shooter.name.upper()} fights {target.name.upper()}.")
-            self.engine.logger.info(msg=f"Shooter - ATT:{ATT} WEAPON:{self.parent.name}({self.base_damage})")
-            self.engine.logger.info(msg=f"Shooter - bend:{shooter.bend})")
-            self.engine.logger.info(msg=f"Target  - DEF:{DEF} COV:{COV} {[entity.name for entity in self.gamemap.fire_line.entities]}")
-            self.engine.logger.info(msg=f"Target  - AC: {armor} SUIT:{armor_suit}") #{if isinstance(target.equipment.}.")
-            self.engine.logger.info(msg=f"HitMargin:{hit_margin} Damage:{damage}")
+        if self.engine.logger.level <= 20:    # 20 for INFO messages
+            if target: 
+                armor_suit = None
+                ATT, DEF, COV = self.gamemap.fire_line.get_hit_stat(target)
+                try:
+                    armor = target.fightable.armor
+                except AttributeError:
+                    armor = "na"
+                self.engine.logger.info(msg=f"*** {shooter.name.upper()} fights {target.name.upper()}.")
+                self.engine.logger.info(msg=f"Shooter - ATT:{ATT} WEAPON:{self.parent.name}({self.base_damage})")
+                self.engine.logger.info(msg=f"Shooter - bend:{shooter.bend}")
+                self.engine.logger.info(msg=f"Target  - DEF:{DEF} COV:{COV} {[entity.name for entity in self.gamemap.fire_line.entities]}")
+                self.engine.logger.info(msg=f"Target  - AC: {armor} SUIT:{armor_suit}") #{if isinstance(target.equipment.}.")
+                self.engine.logger.info(msg=f"HitMargin:{hit_margin} Damage:{damage}")
+
 
     def hit_calculation(self, shooter: Actor, target: Entity) -> Tuple(int, Entity):
         """ Combat calculation

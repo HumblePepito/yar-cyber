@@ -62,9 +62,6 @@ def new_game() -> Engine:
     # auto_pickup lit
     player.auto_pickup_list = [ItemType.POTION.value, ItemType.SCROLL.value]
 
-    # Attach example of walls to the map
-    engine.game_map.wall = entity_factories.wall
-
     return engine
 
 def load_game(filename: str) -> Engine:

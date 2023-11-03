@@ -27,25 +27,25 @@ MOVE_KEYS = {
 
 class FireLine:
     parent: GameMap
+
     def __init__(self,game_map: GameMap):
-        self.game_map = game_map
+        # self.game_map = game_map
+        self.parent = game_map
         self.shooter:Actor = None
         self.shooter_xy: Tuple[int, int] = None
         self.target: Entity = None
         self.target_xy: Tuple[int, int] = None
 
         self.path: List[Tuple[int, int]]
-        self.end: int
         self.entities: List[Entity] = []
         self.combat_stat: Dict = {}# TODO : populate each time a new entity is aimed at
 
 
 
     def compute(self, shooter: Entity, target_xy: Tuple[int, int]) -> None:
-        """ There is only ONE fire line object
+        """ There is only ONE fire line object.
         Compute updates all stats of the fire line based on `shooter` and `target _xy`
            * `path`: as a (x,y) list, without the shooter, with the target
-           * `end`: last square that will be hit (in case of walls)
            * `target` if exists (either Actor or Feature)
            * `entities`: list of entities between shooter and target"""
         self.shooter = shooter
@@ -53,12 +53,11 @@ class FireLine:
         self.target_xy = target_xy
         
         self.path = self.get_path()
-        if self.get_end():
-            self.end = self.get_end()
-            self.target_xy = self.path[self.end]
-        self.target = self.game_map.get_target_at_location(*self.target_xy)
-        self.path = self.path[0:self.end+1]
+        self.target = self.parent.get_target_at_location(*self.target_xy)
         self.entities = self.get_entities()
+
+        self.parent.engine.logger.debug(msg=f"COV: {[entity.name for entity in self.entities]}")
+        self.parent.engine.logger.debug(msg=f"TOT: {self.get_hit_stat(self.target)}")
 
         return
 
@@ -96,16 +95,10 @@ class FireLine:
         fire_line = tcod.los.bresenham(self.shooter_xy, self.target_xy).tolist()
         wall_cover_tmp = 0
     
-        for idx,[i, j] in enumerate(reversed(fire_line[1:-1])):
-            # check if any wall is in between, starting from the end. Only one wall near target is OK (distance 1 or 2). 
-            if not self.game_map.tiles["walkable"][i,j]:
-                if idx == 0:
-                    wall_cover_tmp = 1
-                elif idx == 1 and wall_cover_tmp == 0:
-                    wall_cover_tmp = 1
-                else:
-                    wall_cover_tmp = 15
-                    break
+        for [i, j] in reversed(fire_line[1:-1]):
+            # check walls. 
+            if not self.parent.tiles["walkable"][i,j]:
+                wall_cover_tmp += 1
 
         # if clear line of fire, we won't get better.
         # And no need to bend if shooter and target are aligned : we won't get better either
@@ -149,80 +142,69 @@ class FireLine:
             bend_y = self.shooter.y + dy
             
             # cannot bend into a wall
-            if not self.game_map.tiles["walkable"][bend_x,bend_y]:
+            if not self.parent.tiles["walkable"][bend_x,bend_y]:
                 # print(f"bend in a wall impossible {key}")
                 continue
 
             fire_line = tcod.los.bresenham((bend_x,bend_y), self.target_xy).tolist()
+            
             wall_cover_tmp = 0
-        
-            # for [i, j] in reversed(fire_line[1:-1]): 
-            #     # check if any wall is in between
-            #     # if ok, return the fire line
-            #     if not self.game_map.tiles["walkable"][i,j]:
-            #         wall_cover_tmp += 1
-            for idx,[i, j] in enumerate(reversed(fire_line[1:-1])):
-                # check if any wall is in between, starting from the end. Only one wall near target is OK (distance 1 or 2). 
-                if not self.game_map.tiles["walkable"][i,j]:
-                    if idx == 0:
-                        wall_cover_tmp = 1
-                    elif idx == 1 and wall_cover_tmp == 0:
-                        wall_cover_tmp = 1
-                    else:
-                        wall_cover_tmp = 15
-                        break
+            for [i, j] in reversed(fire_line[1:-1]): 
+                # check if any wall is in between
+                if not self.parent.tiles["walkable"][i,j]:
+                    wall_cover_tmp += 1
 
-            if wall_cover_tmp == 0:
-                is_bend = True
-                self.shooter.bend = key
-                result = fire_line
-                return result
-            elif wall_cover_tmp < wall_cover:
+            if wall_cover_tmp < wall_cover:
                 # means that still position led to 15 and we are now at 1
                 is_bend = True
                 self.shooter.bend = key
                 wall_cover = wall_cover_tmp
                 result = fire_line      
-        # print(f"bend {is_bend} - linecover {wall_cover}")
-        # if is_bend:
-        #     self.shooter.bend = key
+
         return result
-
-    def get_end(self) -> int:
-        """Get the last index of the line of fire.
-        * If two or more walls are in the line of fire, the first one is the end
-        * If no walls, return None"""
-        is_blocked = False
-        # TODO : use pythonic way with enumerate
-        idx = 1
-        for [i, j] in self.path[1:]:
-            if not self.game_map.tiles["walkable"][i,j]:
-                if is_blocked == False:
-                    is_blocked = True
-                else:
-                    return idx-1
-
-            idx += 1
-        
-        return None
     
     def get_entities(self) -> List[Entity]:
         """Gets the entities along the line of fire, only features, actor and walls.
         Does not include the target, nor the shooter."""
         result = []
+        skip_walls = True
         for [i, j] in self.path[:-1]:
-            entity = self.game_map.get_target_at_location(i,j)
+            if skip_walls and self.parent.tiles["walkable"][i,j]:
+                skip_walls = False
+                continue
+
+            entity = self.parent.get_target_at_location(i,j)
             if entity:
                 result.append(entity)
-            if not self.game_map.tiles["walkable"][i,j]:
-                entity = self.game_map.wall
-                result.append(entity)
+            if not self.parent.tiles["walkable"][i,j]:
+                if not skip_walls:
+                    entity = self.parent.wall
+                    result.append(entity)
+
+        # for [i, j] in self.path[:-1]:
+        #     entity = self.parent.get_target_at_location(i,j)
+        #     if entity:
+        #         result.append(entity)
+        #     if not self.parent.tiles["walkable"][i,j]:
+        #         entity = self.parent.wall
+        #         result.append(entity)
 
         return result
     
     def get_hit_stat(self, target: Entity) -> Tuple[int, int, int]:
         """ Provide ATT, DEF and COVER for the designated target
         and save them in this fire_line"""
+
+        if target is None:
+            cover = 0
+            target_size = SizeClass.HUGE.value
+            skip_walls = True
+            for idx,entity in enumerate(self.entities):
+                if skip_walls and entity.name != "Wall":
+                    skip_walls = False
+                else:
+                    cover += max(0, entity.size.value + 1 - target_size)
+            return (0,0,cover)
 
         if target in list(self.combat_stat):
             return self.combat_stat[target]
@@ -231,16 +213,20 @@ class FireLine:
             if target:
                 target_size = target.size.value
             else:
+                # shoot behind the target (wall or nothing)
                 target_size = SizeClass.HUGE.value
-                # target_size = SizeClass.SMALL.value # TODO : remove after test
 
-            for entity in self.entities:
-                cover += max(0, entity.size.value +1 - target_size)
+            skip_walls = True
+            for idx,entity in enumerate(self.entities):
+                if skip_walls and entity.name != "Wall":
+                    skip_walls = False
+                else:
+                    cover += max(0, entity.size.value + 1 - target_size)
 
             base_attack = self.shooter.fightable.attack
             base_defense = target.fightable.defense
             
-            if target is not self.game_map.engine.player:
+            if target is not self.parent.engine.player:
                 self.combat_stat[target] = (base_attack, base_defense, cover)
             
             return (base_attack, base_defense, cover)

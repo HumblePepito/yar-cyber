@@ -113,7 +113,7 @@ def main(stdscr) -> None:
                             handler = handler.handle_events(event)
                 # auto mode
                 else:
-                    if engine.engine.player.ai.is_auto:
+                    if engine.player.ai.is_auto:
                         # Pause ai whenever a key is pressed
                         for event in util.event.get():
                             if isinstance(event, tcod.event.KeyDown):

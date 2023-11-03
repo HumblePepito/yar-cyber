@@ -275,7 +275,7 @@ class FireAction(Action):
 
         """ fire-line has been computed by
          * either the fire handler
-         * either the autattack
+         * either the autottack
          * either the ai
         target is now superseded by the computed target of fire_line
         """
@@ -341,6 +341,7 @@ class AutoAttack(FireAction):
                 x, y = path[1]
                 return MovementAction(entity=self.entity, dx=x-self.entity.x, dy=y-self.entity.y).perform()
             else:
+                self.engine.game_map.fire_line.compute(shooter=self.entity, target_xy=(target.x,target.y))
                 return FireAction(self.entity, target).perform()
                 
 class SwitchAutoPickup(Action):

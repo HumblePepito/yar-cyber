@@ -480,7 +480,6 @@ class SingleRangedAttackHandler(SelectIndexHandler):
         super().__init__(engine=engine, default_select=default_select, extra_confirm=extra_confirm)
         self.callback = callback
         self.engine.game_map.fire_line.compute(shooter= self.engine.player, target_xy=(self.x, self.y))
-        self.engine.logger.debug(msg=f"COV: {[entity.name for entity in self.engine.game_map.fire_line.entities]}")
 
     def on_index_selected(self, x: int, y: int) -> Optional[Action]:
         return self.callback((x, y))
@@ -494,7 +493,6 @@ class SingleRangedAttackHandler(SelectIndexHandler):
         action_handler= super().ev_keydown(event)
         if self.engine.game_map.visible[self.x,self.y]:
             self.engine.game_map.fire_line.compute(shooter= self.engine.player, target_xy=(self.x, self.y))
-            self.engine.logger.debug(msg=f"COV: {[entity.name for entity in self.engine.game_map.fire_line.entities]}")
 
         return action_handler
 
@@ -569,7 +567,8 @@ class AreaRangedAttackHandler(SelectIndexHandler):
                 console.rgb["fg"][renderer.shift(i,j)] = color.gray
                 console.rgb["ch"][renderer.shift(i,j)] = ord("*")
         
-        if lof.end > 0:
+        # explosion take place just before the wall
+        if len(lof.path) > 0:
             x,y = lof.path[-1]
             if not self.engine.game_map.tiles["walkable"][x,y]:
                 x,y = lof.path[-2]
@@ -579,11 +578,11 @@ class AreaRangedAttackHandler(SelectIndexHandler):
         for i in range(-self.radius, self.radius+1):
             for j in range(-self.radius, self.radius+1):
                 if self.engine.game_map.get_target_at_location(x+i,y+j):
-                    console.rgb["bg"][renderer.shift(x+i,y+j)] = color.gray
+                    console.rgb["bg"][renderer.shift(x+i,y+j)] = color.n_gray
                     console.rgb["fg"][renderer.shift(x+i,y+j)] = color.white
                 else:
                     if self.engine.game_map.tiles["walkable"][x+i,y+j]:
-                        console.rgb["fg"][renderer.shift(x+i,y+j)] = color.gray
+                        console.rgb["fg"][renderer.shift(x+i,y+j)] = color.n_gray
                         console.rgb["ch"][renderer.shift(x+i,y+j)] = ord("*")
 
 

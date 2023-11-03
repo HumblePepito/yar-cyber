@@ -166,7 +166,10 @@ def generate_dungeon(
                                 random.randint(room.y1 + 1, room.y2-1))
 
     dungeon.tiles[dungeon.upstairs_location] = tile_types.up_stairs
-    dungeon.tiles[dungeon.downstairs_location] = tile_types.down_stairs      
+    dungeon.tiles[dungeon.downstairs_location] = tile_types.down_stairs
+
+    # Attach example of walls to the map
+    dungeon.wall = entity_factories.wall
 
     return dungeon
 
