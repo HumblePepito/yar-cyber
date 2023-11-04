@@ -57,7 +57,7 @@ class FireLine:
         self.entities = self.get_entities()
 
         self.parent.engine.logger.debug(msg=f"COV: {[entity.name for entity in self.entities]}")
-        self.parent.engine.logger.debug(msg=f"TOT: {self.get_hit_stat(self.target)}")
+        self.parent.engine.logger.debug(msg=f"TOT: {self.get_hit_stat(self.target_xy,self.target)}")
 
         return
 
@@ -171,7 +171,6 @@ class FireLine:
         for [i, j] in self.path[:-1]:
             if skip_walls and self.parent.tiles["walkable"][i,j]:
                 skip_walls = False
-                continue
 
             entity = self.parent.get_target_at_location(i,j)
             if entity:
@@ -191,45 +190,34 @@ class FireLine:
 
         return result
     
-    def get_hit_stat(self, target: Entity) -> Tuple[int, int, int]:
+    def get_hit_stat(self, target_xy:Tuple[int,int], target: Entity = None) -> Tuple[int, int, int]:
         """ Provide ATT, DEF and COVER for the designated target
         and save them in this fire_line"""
 
+        if (target_xy) in list(self.combat_stat):
+            return self.combat_stat[target_xy]
+
+        cover = 0
         if target is None:
-            cover = 0
+            # shoot behind the target (wall or nothing)
             target_size = SizeClass.HUGE.value
-            skip_walls = True
-            for idx,entity in enumerate(self.entities):
-                if skip_walls and entity.name != "Wall":
-                    skip_walls = False
-                else:
-                    cover += max(0, entity.size.value + 1 - target_size)
-            return (0,0,cover)
+            for entity in self.entities:
+                cover += max(0, entity.size.value + 1 - target_size)
 
-        if target in list(self.combat_stat):
-            return self.combat_stat[target]
+            base_attack = 0
+            base_defense = 0
         else:
-            cover = 0
-            if target:
-                target_size = target.size.value
-            else:
-                # shoot behind the target (wall or nothing)
-                target_size = SizeClass.HUGE.value
-
-            skip_walls = True
-            for idx,entity in enumerate(self.entities):
-                if skip_walls and entity.name != "Wall":
-                    skip_walls = False
-                else:
-                    cover += max(0, entity.size.value + 1 - target_size)
+            target_size = target.size.value
+            for entity in self.entities:
+                cover += max(0, entity.size.value + 1 - target_size)
 
             base_attack = self.shooter.fightable.attack
             base_defense = target.fightable.defense
             
-            if target is not self.parent.engine.player:
-                self.combat_stat[target] = (base_attack, base_defense, cover)
-            
-            return (base_attack, base_defense, cover)
+        if target is not self.parent.engine.player:
+            self.combat_stat[target_xy] = (base_attack, base_defense, cover)
+        
+        return (base_attack, base_defense, cover)
 
             
         

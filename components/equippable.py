@@ -190,7 +190,7 @@ class RangedWeapon(Equippable):
         if self.engine.logger.level <= 20:    # 20 for INFO messages
             if target: 
                 armor_suit = None
-                ATT, DEF, COV = self.gamemap.fire_line.get_hit_stat(target)
+                ATT, DEF, COV = self.gamemap.fire_line.get_hit_stat(target_xy=(target.x, target.y),target=target)
                 try:
                     armor = target.fightable.armor
                 except AttributeError:
@@ -200,7 +200,7 @@ class RangedWeapon(Equippable):
                 self.engine.logger.info(msg=f"Shooter - bend:{shooter.bend}")
                 self.engine.logger.info(msg=f"Target  - DEF:{DEF} COV:{COV} {[entity.name for entity in self.gamemap.fire_line.entities]}")
                 self.engine.logger.info(msg=f"Target  - AC: {armor} SUIT:{armor_suit}") #{if isinstance(target.equipment.}.")
-                self.engine.logger.info(msg=f"HitMargin:{hit_margin} Damage:{damage}")
+                self.engine.logger.info(msg=f"HitMargin:{hit_margin} Damage:{damage}")                
 
 
     def hit_calculation(self, shooter: Actor, target: Entity) -> Tuple(int, Entity):
