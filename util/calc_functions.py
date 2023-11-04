@@ -5,6 +5,7 @@ from typing import List, Tuple, TYPE_CHECKING
 import numpy as np
 import line_types
 import tcod
+import color
 
 MOVE_KEYS = {
     # Vi keys.
@@ -103,3 +104,16 @@ def get_sector(x: int, y: int) -> int:
                 target_sector = 8 # check N and NW
     return target_sector
 
+def progress_color(current_value: int, value:int) -> Tuple[int,int,int]:
+    """Returns a color based on evolution if current_value.s
+    For HP, for clip, ..."""
+    progress: float = current_value / value
+
+    if progress >= 0.7:
+        return color.n_green
+    elif progress >= 0.4:
+        return color.b_orange
+    elif progress >= 0.2:
+        return color.n_purple
+    else:
+        return color.n_red

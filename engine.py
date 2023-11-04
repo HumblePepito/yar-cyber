@@ -6,6 +6,7 @@ from tcod.map import compute_fov
 import tcod.constants
 
 from logging import Logger
+from util.calc_functions import progress_color
 
 
 #from actions import EscapeAction, MovementAction, BumpAction, MeleeAction
@@ -67,21 +68,25 @@ class Engine:
         console.print(
             x=40,
             y=0,
-            string=f"HP: {self.player.fightable.hp}/{self.player.fightable.max_hp}", )
-        render_ascii_bar(console,"=","-",50,0,self.player.fightable.hp,self.player.fightable.max_hp,24)
+            string=f"HP: {self.player.fightable.hp}/{self.player.fightable.max_hp}")
+        render_ascii_bar(console,"=",progress_color(self.player.fightable.hp,self.player.fightable.max_hp),"-",color.b_darkgray,50,0,self.player.fightable.hp,self.player.fightable.max_hp,24)
 
-        console.print(x=40,y=1,string=f"Floor level :  {self.game_world.current_floor}")
+        # console.print(x=40,y=1,string=f"Floor level :  {self.game_world.current_floor}")
         console.print(x=40,y=2,string=f"Player level : {self.player.level.current_level} - XP: {self.player.level.current_xp}/{self.player.level.experience_to_next_level}")
 
         weapon = self.player.equipment.weapon
+        clip_msg = ""
         if weapon is None:
             msg = "Punch"
         elif weapon.equippable.is_ranged:
-            msg = f"Weapon: {weapon.name} - Clip: {weapon.equippable.current_clip}/{weapon.equippable.clip_size}"
+            msg = f"Weapon: {weapon.name} - Clip: "
+            clip_msg = f"{weapon.equippable.current_clip}/{weapon.equippable.clip_size}"
         elif not weapon.equippable.is_ranged:
             msg = f"Weapon: {weapon.name}"
         
         console.print(x=40,y=4,string=msg)
+        if clip_msg:
+            console.print(x=40+len(msg),y=4,string=clip_msg,fg=progress_color(weapon.equippable.current_clip,weapon.equippable.clip_size))
 
         # section message
         self.message_log.render(console,40,18,40,6)
@@ -96,7 +101,8 @@ class Engine:
                 else:
                     string=actor.name.capitalize()
 
-                console.print(x=40,y=6+i,string=string,fg=color.red)
+                console.print(x=40,y=9+i,string=" " ,bg=progress_color(actor.fightable.hp,actor.fightable.max_hp))
+                console.print(x=42,y=9+i,string=string,fg=color.red)
                 i=i+1
 
         #context.present(console)
