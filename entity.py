@@ -109,7 +109,7 @@ class Entity:
 
         for actor in set(self.gamemap.visible_actors) - {self}:
             dist = self.distance(actor.x, actor.y)
-            if dist < min_dist:
+            if dist < min_dist and actor.is_alive:
                 min_dist = dist
                 target = actor
 

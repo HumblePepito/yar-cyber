@@ -99,7 +99,7 @@ class GameMap:
 
     def get_actor_at_location(self, x: int, y: int) -> Optional[Actor]:
         for actor in self.actors:
-            if actor.x == x and actor.y == y:
+            if actor.x == x and actor.y == y and actor.is_alive:
                 return actor
         return None
 
@@ -118,7 +118,7 @@ class GameMap:
     def get_target_at_location(self, x: int, y: int) -> Optional[Entity]:
         for entity in self.entities:
             if entity.x == x and entity.y == y:
-                if isinstance(entity, Actor) or isinstance(entity, Feature):
+                if (isinstance(entity, Actor) and entity.is_alive) or isinstance(entity, Feature):
                     return entity
         return None
 
@@ -130,7 +130,6 @@ class GameMap:
         return None
 
     def get_entities_at_location(self, x: int, y: int) -> Iterator[Item]:
-        """Iterate over this maps visible items."""
         yield from (
             entity
             for entity in self.entities
@@ -138,7 +137,6 @@ class GameMap:
         )
     
     def get_items_at_location(self, x: int, y: int) -> Iterator[Item]:
-        """Iterate over this maps visible items."""
         yield from (
             entity
             for entity in self.entities
