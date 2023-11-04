@@ -133,8 +133,9 @@ class RangedWeapon(Equippable):
                         console.rgb["ch"][self.engine.renderer.shift(i,j)] = ord("*")
 
                 for (x,y) in cf.disk_coords(target_xy, self.radius):
-                    console.rgb["fg"][self.engine.renderer.shift(x,y)] = color.n_red  # add color of weapon 
-                    console.rgb["ch"][self.engine.renderer.shift(x,y)] = ord("*")
+                    if self.engine.game_map.tiles["walkable"][x,y] and self.engine.game_map.visible[x,y]:
+                        console.rgb["fg"][self.engine.renderer.shift(x,y)] = color.n_red  # add color of weapon 
+                        console.rgb["ch"][self.engine.renderer.shift(x,y)] = ord("*")
                 context.present(console)
                 time.sleep(0.05)
 
@@ -188,7 +189,7 @@ class RangedWeapon(Equippable):
 
         # log combat information
         if self.engine.logger.level <= 20:    # 20 for INFO messages
-            if target: 
+            if target and target.name != "Wall": 
                 armor_suit = None
                 ATT, DEF, COV = self.gamemap.fire_line.get_hit_stat(target_xy=(target.x, target.y),target=target)
                 try:
@@ -201,7 +202,6 @@ class RangedWeapon(Equippable):
                 self.engine.logger.info(msg=f"Target  - DEF:{DEF} COV:{COV} {[entity.name for entity in self.gamemap.fire_line.entities]}")
                 self.engine.logger.info(msg=f"Target  - AC: {armor} SUIT:{armor_suit}") #{if isinstance(target.equipment.}.")
                 self.engine.logger.info(msg=f"HitMargin:{hit_margin} Damage:{damage}")                
-
 
     def hit_calculation(self, shooter: Actor, target: Entity) -> Tuple(int, Entity):
         """ Combat calculation
