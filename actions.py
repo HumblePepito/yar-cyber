@@ -250,7 +250,6 @@ class FireAction(Action):
             self.ranged_weapon = None
 
     def perform(self) -> None:
-        # print(f"combat_stat #{len(self.engine.game_map.fire_line.combat_stat)}.")   
         if not self.ranged_weapon:
             raise exceptions.Impossible("You must have a working ranged weapon.")
         if self.ranged_weapon.current_clip == 0:
@@ -280,10 +279,9 @@ class FireAction(Action):
         target is now superseded by the computed target of fire_line
         """
         
-        # self.engine.game_map.fire_line.compute(shooter=self.entity, target_xy=(self.target.x, self.target.y))
-        
         # Instead of dealing directly the damage computation, use fonction from the eqquipable
-        item_action = ItemAction(self.entity, self.ranged_weapon.parent, tuple(self.engine.game_map.fire_line.path[-1]))
+        fire_line = self.engine.game_map.get_fire_line(self.entity)
+        item_action = ItemAction(self.entity, self.ranged_weapon.parent, tuple(fire_line.path[-1]))
 
         self.ranged_weapon.activate(item_action)
 
@@ -341,7 +339,7 @@ class AutoAttack(FireAction):
                 x, y = path[1]
                 return MovementAction(entity=self.entity, dx=x-self.entity.x, dy=y-self.entity.y).perform()
             else:
-                self.engine.game_map.fire_line.compute(shooter=self.entity, target_xy=(target.x,target.y))
+                self.engine.game_map.player_lof.compute(shooter=self.entity, target_xy=(target.x,target.y))
                 return FireAction(self.entity, target).perform()
                 
 class SwitchAutoPickup(Action):

@@ -40,8 +40,6 @@ class FireLine:
         self.entities: List[Entity] = []
         self.combat_stat: Dict = {}# TODO : populate each time a new entity is aimed at
 
-
-
     def compute(self, shooter: Entity, target_xy: Tuple[int, int]) -> None:
         """ There is only ONE fire line object.
         Compute updates all stats of the fire line based on `shooter` and `target _xy`

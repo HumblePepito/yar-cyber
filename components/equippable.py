@@ -166,10 +166,7 @@ class RangedWeapon(Equippable):
                     self.engine.message_log.add_message(f"{attack_desc} but does no damage.", attack_color)
 
                 # Animation
-                # fire_line = tcod.los.bresenham((shooter.x, shooter.y),target_xy).tolist()
-                # fire_line.pop(0)
-                lof = self.gamemap.fire_line.get_path()
-                for [i, j] in lof:
+                for [i, j] in self.gamemap.get_fire_line(shooter).path:
                     if self.engine.game_map.get_actor_at_location(i, j):
                         console.rgb["bg"][self.engine.renderer.shift(i,j)] = color.n_red
                         console.rgb["fg"][self.engine.renderer.shift(i,j)] = color.white
@@ -191,7 +188,7 @@ class RangedWeapon(Equippable):
         if self.engine.logger.level <= 20:    # 20 for INFO messages
             if target and target.name != "Wall": 
                 armor_suit = None
-                ATT, DEF, COV = self.gamemap.fire_line.get_hit_stat(target_xy=(target.x, target.y),target=target)
+                ATT, DEF, COV = self.gamemap.player_lof.get_hit_stat(target_xy=(target.x, target.y),target=target)
                 try:
                     armor = target.fightable.armor
                 except AttributeError:
@@ -199,7 +196,7 @@ class RangedWeapon(Equippable):
                 self.engine.logger.info(msg=f"*** {shooter.name.upper()} fights {target.name.upper()}.")
                 self.engine.logger.info(msg=f"Shooter - ATT:{ATT} WEAPON:{self.parent.name}({self.base_damage})")
                 self.engine.logger.info(msg=f"Shooter - bend:{shooter.bend}")
-                self.engine.logger.info(msg=f"Target  - DEF:{DEF} COV:{COV} {[entity.name for entity in self.gamemap.fire_line.entities]}")
+                self.engine.logger.info(msg=f"Target  - DEF:{DEF} COV:{COV} {[entity.name for entity in self.gamemap.player_lof.entities]}")
                 self.engine.logger.info(msg=f"Target  - AC: {armor} SUIT:{armor_suit}") #{if isinstance(target.equipment.}.")
                 self.engine.logger.info(msg=f"HitMargin:{hit_margin} Damage:{damage}")                
 
@@ -208,7 +205,7 @@ class RangedWeapon(Equippable):
         Returns
             int: None = missed, >=0 = hit margin
             entity: who is hit"""
-        fire_line = self.gamemap.fire_line
+        fire_line = self.gamemap.get_fire_line(shooter)
 
         if target:
             base_attack, base_defense, cover = fire_line.get_hit_stat(target)
@@ -319,9 +316,9 @@ class Sword(Equippable):
 
 class LeatherArmor(Equippable):
     def __init__(self):
-        super().__init__(equipment_type=EquipmentSlot.ARMOR, armor_bonus=1)
+        super().__init__(equipment_type=EquipmentSlot.ARMOR, armor_bonus=3)
 
 
 class ChainMail(Equippable):
     def __init__(self):
-        super().__init__(equipment_type=EquipmentSlot.ARMOR, armor_bonus=3)
+        super().__init__(equipment_type=EquipmentSlot.ARMOR, armor_bonus=6)

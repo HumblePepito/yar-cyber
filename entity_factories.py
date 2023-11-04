@@ -118,7 +118,7 @@ troll = Actor(
     ai_cls=HostileEnemy,
     equipment=Equipment(),
     fightable=Fighter(hp=16, base_defense=2, base_attack=6, base_armor =6),
-    inventory=Inventory(26,[None, revolver, grenade_launcher, sword, leather_armor,]),
+    inventory=Inventory(26,[revolver, grenade_launcher, sword, leather_armor, chain_mail]),
     level=Level(xp_given=100),
     size=SizeClass.BIG
 )

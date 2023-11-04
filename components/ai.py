@@ -73,7 +73,8 @@ class HostileEnemy(BaseAI):
             weapon = self.entity.equipment.weapon
 
             # Reset cache as soon as it is not player's turn
-            self.engine.game_map.fire_line.combat_stat = {}
+            self.engine.game_map.player_lof.combat_stat = {}
+            self.engine.game_map.hostile_lof.combat_stat = {} # TODO : at start of player turn would be better
 
             # bare handed
             if weapon is None:
@@ -83,8 +84,8 @@ class HostileEnemy(BaseAI):
             else:
                 if weapon.equippable.is_ranged:
                     if self.entity.distance(target.x, target.y) <= weapon.equippable.base_range:
-                        self.engine.game_map.fire_line.compute(shooter= self.entity, target_xy=(target.x, target.y))
-                        self.engine.logger.debug([entity.name for entity in self.engine.game_map.fire_line.entities])
+                        self.engine.game_map.hostile_lof.compute(shooter= self.entity, target_xy=(target.x, target.y))
+                        self.engine.logger.debug([entity.name for entity in self.engine.game_map.player_lof.entities])
                         self.path = self.get_path_to(target.x, target.y)
                         # add a return to quit here this perform
                         return FireAction(self.entity, target).perform()

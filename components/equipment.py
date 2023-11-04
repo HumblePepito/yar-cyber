@@ -31,8 +31,8 @@ class Equipment(BaseComponent):
         #     bonus += self.armor_suit.equippable.defense_bonus
 
         return bonus
-    @property
 
+    @property
     def armor_bonus(self) -> int:
         bonus = 0
 

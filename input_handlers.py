@@ -8,7 +8,6 @@ import tcod.event
 import tcod.tileset
 from tcod import libtcodpy
 import actions
-import fire_line
 from actions import (Action, BumpAction, WaitAction)
 
 import color
@@ -19,8 +18,8 @@ import util.calc_functions as cf
 from renderer import Renderer
 
 if TYPE_CHECKING:
-    from engine import Engine
     from entity import Item, Actor
+    from engine import Engine
     from components.equippable import RangedWeapon
     from renderer import Renderer
 
@@ -479,7 +478,7 @@ class SingleRangedAttackHandler(SelectIndexHandler):
     ):
         super().__init__(engine=engine, default_select=default_select, extra_confirm=extra_confirm)
         self.callback = callback
-        self.engine.game_map.fire_line.compute(shooter= self.engine.player, target_xy=(self.x, self.y))
+        self.engine.game_map.player_lof.compute(shooter= self.engine.player, target_xy=(self.x, self.y))
 
     def on_index_selected(self, x: int, y: int) -> Optional[Action]:
         return self.callback((x, y))
@@ -492,7 +491,7 @@ class SingleRangedAttackHandler(SelectIndexHandler):
     def ev_keydown(self, event: tcod.event.KeyDown) -> ActionOrHandler | None:
         action_handler= super().ev_keydown(event)
         if self.engine.game_map.visible[self.x,self.y]:
-            self.engine.game_map.fire_line.compute(shooter= self.engine.player, target_xy=(self.x, self.y))
+            self.engine.game_map.player_lof.compute(shooter= self.engine.player, target_xy=(self.x, self.y))
 
         return action_handler
 
@@ -502,12 +501,7 @@ class SingleRangedAttackHandler(SelectIndexHandler):
         if self.engine.game_map.visible[self.x,self.y]:
             console = renderer.console
 
-            # fire_line: List = tcod.los.bresenham((self.engine.player.x, self.engine.player.y), (self.x, self.y)).tolist()
-            # fire_line: List = cf.move_path(map_fov=self.engine.game_map.tiles, shooter_xy=(self.engine.player.x, self.engine.player.y),target_xy=(self.x, self.y))["path"].squeeze(axis=(1,)).tolist() 
-            # fire_line.pop(0)
-            # fire_line = cf.fire_line(map_fov=self.engine.game_map.tiles, shooter_xy=(self.engine.player.x, self.engine.player.y),target_xy=(self.x, self.y))
-            lof = self.engine.game_map.fire_line
-
+            lof = self.engine.game_map.player_lof
             for [i, j] in lof.path: 
                 if self.engine.game_map.tiles["light"]["ch"][i,j] == ord("#"):
                     console.rgb["bg"][renderer.shift(i,j)] = color.gray
@@ -518,7 +512,25 @@ class SingleRangedAttackHandler(SelectIndexHandler):
                 else:
                     console.rgb["fg"][renderer.shift(i,j)] = color.gray
                     console.rgb["ch"][renderer.shift(i,j)] = ord("*")
-        
+
+            try:
+                armor = lof.target.fightable.armor
+            except AttributeError:
+                armor = "na"
+            try:
+                weapon_name = f" ({lof.target.equipment.weapon.name.capitalize()})"
+            except AttributeError:
+                weapon_name = " "
+
+            if lof.target and lof.target != self.engine.player:
+                ATT, DEF, COV = self.engine.game_map.player_lof.get_hit_stat(target_xy=(lof.target_xy))
+                console.print(x=40,y=5,string=f"Target:{lof.target.name.capitalize()} {weapon_name}")
+                console.print(x=40,y=6,string=f"Distance:{len(lof.path)} / Armor:{armor}")
+                console.print(x=40,y=7,string=f"Att:{ATT} vs Def:{DEF}+Cov:{COV}")
+            if not lof.target:
+                ATT, DEF, COV = self.engine.game_map.player_lof.get_hit_stat(target_xy=(lof.target_xy))
+                console.print(x=40,y=5,string=f"No target")
+                console.print(x=40,y=6,string=f"Distance:{len(lof.path)} / Cov:{COV}")
            
 
 class AreaRangedAttackHandler(SelectIndexHandler):
@@ -535,7 +547,7 @@ class AreaRangedAttackHandler(SelectIndexHandler):
         super().__init__(engine=engine, default_select=default_select, extra_confirm=extra_confirm)
         self.radius = radius
         self.callback = callback
-        self.engine.game_map.fire_line.compute(shooter= self.engine.player, target_xy=(self.x, self.y))
+        self.engine.game_map.player_lof.compute(shooter= self.engine.player, target_xy=(self.x, self.y))
 
     def clamp(self, dx,dy) -> Tuple[int,int]:
         """Clamp the cursor index to the view area."""
@@ -544,7 +556,7 @@ class AreaRangedAttackHandler(SelectIndexHandler):
 
     def ev_keydown(self, event: tcod.event.KeyDown) -> ActionOrHandler | None:
         action_handler= super().ev_keydown(event)
-        self.engine.game_map.fire_line.compute(shooter= self.engine.player, target_xy=(self.x, self.y))
+        self.engine.game_map.player_lof.compute(shooter= self.engine.player, target_xy=(self.x, self.y))
 
         return action_handler
 
@@ -554,37 +566,58 @@ class AreaRangedAttackHandler(SelectIndexHandler):
         super().on_render(renderer)
         console = renderer.console
 
-        lof = self.engine.game_map.fire_line
+        if self.engine.game_map.visible[self.x,self.y]:
+            lof = self.engine.game_map.player_lof
 
-        for [i, j] in lof.path:
-            if self.engine.game_map.tiles["light"]["ch"][i,j] == ord("#"):
-                console.rgb["bg"][renderer.shift(i,j)] = color.gray
-                console.rgb["fg"][renderer.shift(i,j)] = color.white
-            elif self.engine.game_map.get_target_at_location(i, j):
-                console.rgb["bg"][renderer.shift(i,j)] = color.gray
-                console.rgb["fg"][renderer.shift(i,j)] = color.white
-            else:
-                console.rgb["fg"][renderer.shift(i,j)] = color.gray
-                console.rgb["ch"][renderer.shift(i,j)] = ord("*")
-        
-        # explosion take place just before the wall
-        if len(lof.path) > 0:
-            x,y = lof.path[-1]
-            if not self.engine.game_map.tiles["walkable"][x,y]:
-                x,y = lof.path[-2]
-        else:
-            x,y = self.x,self.y
-
-        for i in range(-self.radius, self.radius+1):
-            for j in range(-self.radius, self.radius+1):
-                if self.engine.game_map.get_target_at_location(x+i,y+j):
-                    console.rgb["bg"][renderer.shift(x+i,y+j)] = color.n_gray
-                    console.rgb["fg"][renderer.shift(x+i,y+j)] = color.white
+            for [i, j] in lof.path:
+                if self.engine.game_map.tiles["light"]["ch"][i,j] == ord("#"):
+                    console.rgb["bg"][renderer.shift(i,j)] = color.gray
+                    console.rgb["fg"][renderer.shift(i,j)] = color.white
+                elif self.engine.game_map.get_target_at_location(i, j):
+                    console.rgb["bg"][renderer.shift(i,j)] = color.gray
+                    console.rgb["fg"][renderer.shift(i,j)] = color.white
                 else:
-                    if self.engine.game_map.tiles["walkable"][x+i,y+j]:
-                        console.rgb["fg"][renderer.shift(x+i,y+j)] = color.n_gray
-                        console.rgb["ch"][renderer.shift(x+i,y+j)] = ord("*")
+                    console.rgb["fg"][renderer.shift(i,j)] = color.gray
+                    console.rgb["ch"][renderer.shift(i,j)] = ord("*")
+            
+            # explosion take place just before the wall
+            x,y = self.x,self.y
+            if not self.engine.game_map.tiles["walkable"][x,y]:
+                if len(lof.path) > 1:
+                    x,y = lof.path[-2]
+                else:
+                    x,y = lof.shooter_xy
 
+            for i in range(-self.radius, self.radius+1):
+                for j in range(-self.radius, self.radius+1):
+                    if self.engine.game_map.get_target_at_location(x+i,y+j):
+                        console.rgb["bg"][renderer.shift(x+i,y+j)] = color.n_gray
+                        console.rgb["fg"][renderer.shift(x+i,y+j)] = color.white
+                    else:
+                        if self.engine.game_map.tiles["walkable"][x+i,y+j]:
+                            console.rgb["fg"][renderer.shift(x+i,y+j)] = color.n_gray
+                            console.rgb["ch"][renderer.shift(x+i,y+j)] = ord("*")
+
+            try:
+                armor = lof.target.fightable.armor
+            except AttributeError:
+                armor = "na"
+            try:
+                weapon_name = f" ({lof.target.equipment.weapon.name.capitalize()})"
+            except AttributeError:
+                weapon_name = " "
+
+            if lof.target and lof.target != self.engine.player:
+                ATT, DEF, COV = self.engine.game_map.player_lof.get_hit_stat(target_xy=(lof.target_xy))
+                console.print(x=40,y=5,string=f"Target:{lof.target.name.capitalize()} {weapon_name}")
+                console.print(x=40,y=6,string=f"Distance:{len(lof.path)} / Armor:{armor}")
+                console.print(x=40,y=7,string=f"Att:{ATT} vs Def:{DEF}+Cov:{COV}")
+
+
+            if not lof.target:
+                ATT, DEF, COV = self.engine.game_map.player_lof.get_hit_stat(target_xy=(lof.target_xy))
+                console.print(x=40,y=5,string=f"No target")
+                console.print(x=40,y=6,string=f"Distance:{len(lof.path)} / Cov:{COV}")
 
     def on_index_selected(self, x: int, y: int) -> Optional[Action]:
         return self.callback((x, y))

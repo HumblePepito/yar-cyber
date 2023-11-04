@@ -26,7 +26,8 @@ class GameMap:
         self.upstairs_location =(0,0)
         self.downstairs_location =(0,0)
 
-        self.fire_line = FireLine(game_map=self)
+        self.player_lof = FireLine(game_map=self)
+        self.hostile_lof = FireLine(game_map=self)
         self.wall: Entity = None
 
     
@@ -142,7 +143,12 @@ class GameMap:
             for entity in self.entities
             if isinstance(entity, Item) and entity.x == x and entity.y == y
         )
-    
+
+    def get_fire_line(self, shooter: Actor) -> FireLine:
+        if shooter == self.engine.player:
+            return self.player_lof
+        return self.hostile_lof
+
     def in_bounds(self, x: int, y: int) -> bool:
         """Return True if x and y are inside of the bounds of this map."""
         return 0 <= x < self.width and 0 <= y < self.height

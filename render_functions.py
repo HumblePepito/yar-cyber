@@ -21,7 +21,9 @@ def get_names_at_location(x: int, y: int, game_map: GameMap) -> str:
 def render_ascii_bar(
         console: Console,
         fill_char: str,
+        fill_color: (int,int,int),
         empty_char: str,
+        empty_color: (int,int,int),
         x: int,
         y: int,
         current_value: int,
@@ -31,8 +33,6 @@ def render_ascii_bar(
     
     bar_width = int(float(current_value) / maximum_value * total_width)
 
-    ascii_bar = f"{fill_char*bar_width}{empty_char*(total_width-bar_width)}"
-    console.print(x,y,ascii_bar)
-
-
-
+    console.print(x,y,f"{fill_char*bar_width}",fill_color)
+    console.print(x+bar_width,y,f"{empty_char*(total_width-bar_width)}",empty_color)
+    
