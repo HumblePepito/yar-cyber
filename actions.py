@@ -5,6 +5,7 @@ import time
 
 from typing import List, Optional, Tuple, TYPE_CHECKING
 from entity import Actor
+from various_enum import ItemType
 
 import exceptions
 import color
@@ -244,7 +245,7 @@ class FireAction(Action):
         self.item = entity.equipment.weapon  
         self.target = target 
         try:
-            if self.item.equippable.is_ranged:
+            if self.item.item_type == ItemType.RANGED_WEAPON: 
                 self.ranged_weapon: RangedWeapon = self.item.equippable
         except AttributeError:
             self.ranged_weapon = None
@@ -255,20 +256,6 @@ class FireAction(Action):
         if self.ranged_weapon.current_clip == 0:
             raise exceptions.Impossible("No more ammo. Reload.") # TODO : what happens for monters ?
 
-        # only in auto_attack
-        # # nearest monster if no target provided
-        # if not self.target:
-        #     min_dist: float = 100
-        #     dist: float = 0
-
-        #     for actor in set(self.engine.game_map.visible_actors) - {self.entity}:
-        #         dist = self.entity.distance(actor.x, actor.y)
-        #         if dist < min_dist:
-        #             min_dist = dist
-        #             self.target = actor
-
-        # if self.target == None:
-        #     raise exceptions.Impossible("No visible target.")
         if self.entity.distance(self.target.x, self.target.y) > self.ranged_weapon.base_range:
             raise exceptions.Impossible("Target is too far away.")
 
@@ -293,7 +280,7 @@ class Reload(Action):
         self.item = entity.equipment.weapon  
         self.target = target 
         try:
-            if self.item.equippable.is_ranged:
+            if self.item.item_type == ItemType.RANGED_WEAPON:
                 self.ranged_weapon: RangedWeapon = self.item.equippable
         except AttributeError:
             self.ranged_weapon = None
@@ -325,14 +312,14 @@ class AutoAttack(FireAction):
             raise exceptions.Impossible("No visible target.")
         
         # Melee Weapon  // TODO: deal bare handed fight
-        if not self.item.equippable.is_ranged:            
+        if self.item.item_type == ItemType.MELEE_WEAPON:            
             path = tcod.los.bresenham((self.entity.x, self.entity.y),(target.x, target.y)).tolist()
             # TODO : block in certain situation (through wall)
             x, y = path[1]
 
             return BumpAction(entity=self.entity, dx=x-self.entity.x, dy=y-self.entity.y).perform()
         # Ranged Weapon
-        else:
+        elif self.item.item_type == ItemType.RANGED_WEAPON:
             if self.entity.distance(target.x, target.y) > self.ranged_weapon.base_range:
                 path = tcod.los.bresenham((self.entity.x, self.entity.y),(target.x, target.y)).tolist()
                 # TODO : block in certain situation (through wall)

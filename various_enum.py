@@ -10,7 +10,7 @@ class ItemType(Enum):
     ITEM = auto()
     MELEE_WEAPON = auto()
     RANGED_WEAPON = auto()
-    ARMOR = auto()
+    ARMOR_SUIT = auto()
     POTION = auto()
     GOLD = auto()
     SCROLL = auto()

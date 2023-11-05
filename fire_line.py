@@ -202,7 +202,7 @@ class FireLine:
             for entity in self.entities:
                 cover += max(0, entity.size.value + 1 - target_size)
 
-            base_attack = 0
+            base_attack = self.shooter.fightable.attack
             base_defense = 0
         else:
             target_size = target.size.value

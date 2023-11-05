@@ -31,7 +31,6 @@ class Equippable(BaseComponent):
         self.equipment_type = equipment_type # add equipment slot
         self.attack_bonus = attack_bonus
         self.armor_bonus = armor_bonus
-        self.is_ranged = False # TODO : or an enum of value to define the different weapon
     
 class RangedWeapon(Equippable):
     """ item, equippable with its set of attributes"""
@@ -51,7 +50,6 @@ class RangedWeapon(Equippable):
         self.base_range = base_range
         self.clip_size = clip_size
         self.radius = radius
-        self.is_ranged   = True
         self.current_clip = clip_size
     
     def get_fire_action(self, shooter: Actor) -> Optional[ActionOrHandler]:

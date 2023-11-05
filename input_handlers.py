@@ -535,8 +535,8 @@ class SingleRangedAttackHandler(SelectIndexHandler):
 
             if not lof.target:
                 ATT, DEF, COV = self.engine.game_map.player_lof.get_hit_stat(target_xy=(lof.target_xy))
-                console.print(x=40,y=5,string=f"No target")
-                console.print(x=40,y=6,string=f"Distance:{len(lof.path)} / Cov:{COV}")
+                console.print(x=40,y=5,string=f"No target", fg=color.b_darkgray)
+                console.print(x=40,y=6,string=f"Distance:{len(lof.path)} / Cov:{COV}", fg=color.b_darkgray)
            
 
 class AreaRangedAttackHandler(SelectIndexHandler):
@@ -627,26 +627,6 @@ class AreaRangedAttackHandler(SelectIndexHandler):
 
     def on_index_selected(self, x: int, y: int) -> Optional[Action]:
         return self.callback((x, y))
-
-# class FireHandler(EventHandler):
-#     """Handles shooting at a single target or at a direction."""
-#     def __init__(self, engine: Engine):
-#         super().__init__(engine)
-#         self.item = engine.player.equipment.weapon   
-#         try:
-#             if self.item.equippable.is_ranged:
-#                 self.ranged_weapon: RangedWeapon = self.item.equippable
-#         except AttributeError:
-#             self.ranged_weapon = None
-
-#     def handle_action(self, action: Optional[Action]) -> bool:
-#         """Handle specific fire actions : depends on the weapon.
-
-#         Return True if the action will advance a turn"""
-
-#         action: Action = self.ranged_weapon.get_fire_action(self.engine.player)        
-#         super().handle_action(action)
-
 
 class MainGameEventHandler(EventHandler):
 

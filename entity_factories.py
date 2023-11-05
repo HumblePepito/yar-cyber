@@ -30,42 +30,43 @@ fireballScroll = Item(
 )
 
 dagger = Item(
-    char=")", color=(0, 191, 255), name="Dagger", equippable=equippable.Dagger(), ### ARHHHH, only the () were missing here
+    char=")", color=(0, 191, 255), name="Dagger", equippable=equippable.Dagger(), item_type= ItemType.MELEE_WEAPON,
 )
 
 sword = Item(
-    char=")", color=(0, 191, 255), name="Sword", equippable=equippable.Sword()
+    char=")", color=(0, 191, 255), name="Sword", equippable=equippable.Sword(), item_type= ItemType.MELEE_WEAPON,
 )
 
 leather_armor = Item(
-    char="[", color=(139, 69, 19), name="Leather Armor", equippable=equippable.LeatherArmor(),
+    char="[", color=(139, 69, 19), name="Leather Armor", equippable=equippable.LeatherArmor(), item_type= ItemType.ARMOR_SUIT
 )
 
 chain_mail = Item(
-    char="[", color=(139, 69, 19), name="Chain Mail", equippable=equippable.ChainMail()
+    char="[", color=(139, 69, 19), name="Chain Mail", equippable=equippable.ChainMail(), item_type= ItemType.ARMOR_SUIT
 )
 
 sling = Item(
-    char=")", color=(200, 69, 50), name="Sling", equippable=equippable.Sling()
+    char=")", color=(200, 69, 50), name="Sling", equippable=equippable.Sling(), item_type= ItemType.RANGED_WEAPON,
 )
 
 gun = Item(
     char=")",
     color=color.n_gray,
     name="Gun",
-    equippable=equippable.Gun()
+    equippable=equippable.Gun(),
+    item_type= ItemType.RANGED_WEAPON,
 )
 
 revolver = Item(
-    char=")", color=color.b_yellow, name="Revolver", equippable=equippable.Revolver()
+    char=")", color=color.b_yellow, name="Revolver", equippable=equippable.Revolver(), item_type= ItemType.RANGED_WEAPON,
 )
 
 rifle = Item(
-    char=")", color=color.n_cyan, name="Rifle", equippable=equippable.Rifle()
+    char=")", color=color.n_cyan, name="Rifle", equippable=equippable.Rifle(), item_type= ItemType.RANGED_WEAPON
 )
 
 grenade_launcher = Item(
-    char=")", color=color.b_orange, name="Grenade Launcher", equippable=equippable.GrenadeLauncher()
+    char=")", color=color.b_orange, name="Grenade Launcher", equippable=equippable.GrenadeLauncher(), item_type= ItemType.RANGED_WEAPON
 )
 
 barrel = Feature(

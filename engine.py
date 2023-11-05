@@ -7,6 +7,7 @@ import tcod.constants
 
 from logging import Logger
 from util.calc_functions import progress_color
+from various_enum import ItemType
 
 
 #from actions import EscapeAction, MovementAction, BumpAction, MeleeAction
@@ -78,10 +79,10 @@ class Engine:
         clip_msg = ""
         if weapon is None:
             msg = "Punch"
-        elif weapon.equippable.is_ranged:
+        elif weapon.item_type == ItemType.RANGED_WEAPON:
             msg = f"Weapon: {weapon.name} - Clip: "
             clip_msg = f"{weapon.equippable.current_clip}/{weapon.equippable.clip_size}"
-        elif not weapon.equippable.is_ranged:
+        elif weapon.item_type == ItemType.MELEE_WEAPON:
             msg = f"Weapon: {weapon.name}"
         
         console.print(x=40,y=4,string=msg)

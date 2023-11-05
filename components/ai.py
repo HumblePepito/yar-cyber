@@ -6,6 +6,7 @@ from typing import List, Optional, Tuple, TYPE_CHECKING
 
 import numpy as np  # type: ignore
 import util.calc_functions as cf
+from various_enum import ItemType
 
 import tcod
 import exceptions
@@ -82,7 +83,7 @@ class HostileEnemy(BaseAI):
                     MeleeAction(self.entity, dx, dy).perform()
             # ranged weapon
             else:
-                if weapon.equippable.is_ranged:
+                if weapon.item_type == ItemType.RANGED_WEAPON:
                     if self.entity.distance(target.x, target.y) <= weapon.equippable.base_range:
                         self.engine.game_map.hostile_lof.compute(shooter= self.entity, target_xy=(target.x, target.y))
                         self.engine.logger.debug([entity.name for entity in self.engine.game_map.player_lof.entities])
