@@ -62,10 +62,6 @@ class Entity:
     def is_visible(self) -> bool:
         """Entity is visible in the FOV"""
         return self.gamemap.visible[self.x, self.y]
-        # if self.gamemap.visible[self.x, self.y]:
-        #     return True
-        # else:
-        #     return False
 
     @property
     def is_actor(self) -> bool:
@@ -202,6 +198,10 @@ class Item(Entity):
         self.equippable = equippable
         if self.equippable:
             self.equippable.parent = self        
+
+class Hero(Actor):
+    pass
+
 
 class Feature(Entity):
     def __init__(
