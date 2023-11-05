@@ -256,8 +256,8 @@ class FireAction(Action):
         if self.ranged_weapon.current_clip == 0:
             raise exceptions.Impossible("No more ammo. Reload.") # TODO : what happens for monters ?
 
-        if self.entity.distance(self.target.x, self.target.y) > self.ranged_weapon.base_range:
-            raise exceptions.Impossible("Target is too far away.")
+        # if self.entity.distance(self.target.x, self.target.y) > self.ranged_weapon.base_range:
+        #     raise exceptions.Impossible("Target is too far away.")
 
         """ fire-line has been computed by
          * either the fire handler

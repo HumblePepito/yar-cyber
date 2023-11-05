@@ -523,15 +523,16 @@ class SingleRangedAttackHandler(SelectIndexHandler):
                     weapon_name = f" ({lof.target.equipment.weapon.name.capitalize()})"
                 except AttributeError:
                     weapon_name = " "
-                ATT, DEF, COV = self.engine.game_map.player_lof.get_hit_stat(target_xy=(lof.target_xy))
+                ATT, DEF, COV = self.engine.game_map.player_lof.get_hit_stat(target_xy=(lof.target_xy),target=lof.target)
                 console.print(x=40,y=5,string=f"Target:{lof.target.name.capitalize()} {weapon_name}")
                 console.print(x=40,y=6,string=f"Distance:{len(lof.path)} / Armor:{armor}")
                 console.print(x=40,y=7,string=f"Att:{ATT} vs Def:{DEF}+Cov:{COV}")
 
-                self.engine.game_map.hostile_lof.compute(shooter=lof.target, target_xy=(self.engine.player.x, self.engine.player.y))
-                ATT, DEF, COV = self.engine.game_map.hostile_lof.get_hit_stat(target_xy=(self.engine.player.x, self.engine.player.y), target=self.engine.player)
-                console.print(x=40,y=8,string=  "   Retaliation:",fg=color.b_darkgray)
-                console.print(x=40,y=9,string=f"   Att:{ATT} vs Def:{DEF}+Cov:{COV}",fg=color.b_darkgray)
+                if lof.target.is_actor:
+                    self.engine.game_map.hostile_lof.compute(shooter=lof.target, target_xy=(self.engine.player.x, self.engine.player.y))
+                    ATT, DEF, COV = self.engine.game_map.hostile_lof.get_hit_stat(target_xy=(self.engine.player.x, self.engine.player.y), target=self.engine.player)
+                    console.print(x=40,y=8,string=  "   Retaliation:",fg=color.b_darkgray)
+                    console.print(x=40,y=9,string=f"   Att:{ATT} vs Def:{DEF}+Cov:{COV}",fg=color.b_darkgray)
 
             if not lof.target:
                 ATT, DEF, COV = self.engine.game_map.player_lof.get_hit_stat(target_xy=(lof.target_xy))
@@ -614,7 +615,7 @@ class AreaRangedAttackHandler(SelectIndexHandler):
                 weapon_name = " "
 
             if lof.target and lof.target != self.engine.player:
-                ATT, DEF, COV = self.engine.game_map.player_lof.get_hit_stat(target_xy=(lof.target_xy))
+                ATT, DEF, COV = self.engine.game_map.player_lof.get_hit_stat(target_xy=(lof.target_xy), target=lof.target)
                 console.print(x=40,y=5,string=f"Target:{lof.target.name.capitalize()} {weapon_name}")
                 console.print(x=40,y=6,string=f"Distance:{len(lof.path)} / Armor:{armor}")
                 console.print(x=40,y=7,string=f"Att:{ATT} vs Def:{DEF}+Cov:{COV}")

@@ -33,15 +33,15 @@ class Equippable(BaseComponent):
         self.armor_bonus = armor_bonus
     
 class RangedWeapon(Equippable):
-    """ item, equippable with its set of attributes"""
-    # TODO : I keep parent: Item, should we change to parent: Equippable ??  My guess : no because Equippable is "just" a component.
+    """ Ranged Weapon, attached to an Item of type RANGED_WEAPON.
+    Activation is in charge of combat calculations"""
 
     def __init__(
         self,
         equipment_type: EquipmentSlot,
         attack_bonus: int = 0,
         base_damage: int = 1,
-        base_range: int = 0,
+        base_range: int = 1,
         clip_size: int=0,
         radius: int = None,
     ):
@@ -87,8 +87,8 @@ class RangedWeapon(Equippable):
         if not self.engine.game_map.visible[target_xy]:
             raise Impossible("You cannot target an area that you cannot see.")
 
-        if shooter.distance(*target_xy) > self.base_range:
-            raise Impossible("Target is too far away.")
+        # if shooter.distance(*target_xy) > self.base_range:
+        #     raise Impossible("Target is too far away.")
 
         hit_margin, target = self.hit_calculation(shooter, target)
 
@@ -185,17 +185,17 @@ class RangedWeapon(Equippable):
         # log combat information
         if self.engine.logger.level <= 20:    # 20 for INFO messages
             if target and target.name != "Wall": 
-                armor_suit = None
-                ATT, DEF, COV = self.gamemap.player_lof.get_hit_stat(target_xy=(target.x, target.y),target=target)
+                lof = self.gamemap.get_fire_line(shooter=shooter)
+                ATT, DEF, COV = lof.get_hit_stat(target_xy=(target.x, target.y),target=target)
                 try:
-                    armor = target.fightable.armor
+                    armor_suit = target.equipment.armor_suit.name
                 except AttributeError:
-                    armor = "na"
+                    armor_suit = "None"                
                 self.engine.logger.info(msg=f"*** {shooter.name.upper()} fights {target.name.upper()}.")
                 self.engine.logger.info(msg=f"Shooter - ATT:{ATT} WEAPON:{self.parent.name}({self.base_damage})")
                 self.engine.logger.info(msg=f"Shooter - bend:{shooter.bend}")
-                self.engine.logger.info(msg=f"Target  - DEF:{DEF} COV:{COV} {[entity.name for entity in self.gamemap.player_lof.entities]}")
-                self.engine.logger.info(msg=f"Target  - AC: {armor} SUIT:{armor_suit}") #{if isinstance(target.equipment.}.")
+                self.engine.logger.info(msg=f"Target  - DEF:{DEF} COV:{COV} {[entity.name for entity in lof.entities]}")
+                self.engine.logger.info(msg=f"Target  - AC: {target.fightable.armor} SUIT:{armor_suit}") #{if isinstance(target.equipment.}.")
                 self.engine.logger.info(msg=f"HitMargin:{hit_margin} Damage:{damage}")                
 
     def hit_calculation(self, shooter: Actor, target: Entity) -> Tuple(int, Entity):
@@ -206,9 +206,10 @@ class RangedWeapon(Equippable):
         fire_line = self.gamemap.get_fire_line(shooter)
 
         if target:
-            base_attack, base_defense, cover = fire_line.get_hit_stat(target)
+            base_attack, base_defense, cover = fire_line.get_hit_stat((target.x,target.y),target)
     
-            attack = base_attack # TODO : aiming ? range ? or consecutive shots ? and of course : wounds
+            # TODO : extra modifiers (most are in get_hit_stat)
+            attack = base_attack
             defense = base_defense + cover
 
             # Roll !
@@ -220,8 +221,14 @@ class RangedWeapon(Equippable):
             for i in range(0,defense):
                 if random.randint(1,3) == 3:
                     defense_success += 1
+            
+            self.engine.logger.debug(f"Att:{attack_success} success on {attack}, Def:{defense_success} on {defense}")
 
-            hit_margin = attack_success - defense_success
+
+            if attack_success:
+                hit_margin = attack_success - defense_success
+            else:
+                hit_margin = -1 # no success is always a miss
         else:
             hit_margin = 0
 
@@ -273,6 +280,8 @@ class RangedWeapon(Equippable):
         for i in range(0,armor):
             if random.randint(1,3) == 3:
                damage -= 1
+        
+        self.engine.logger.debug(f"Armor damage reduction:{self.base_damage + hit_margin-damage} success on {armor}")
 
         return max(0,damage)
 
@@ -292,7 +301,7 @@ class Gun(RangedWeapon):
 
 class Revolver(RangedWeapon):
     def __init__(self):
-        super().__init__(equipment_type=EquipmentSlot.WEAPON, base_damage=5, base_range=5, clip_size=6)
+        super().__init__(equipment_type=EquipmentSlot.WEAPON, base_damage=5, base_range=4, clip_size=6)
 
 class Rifle(RangedWeapon):
     def __init__(self):

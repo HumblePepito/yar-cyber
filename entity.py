@@ -58,6 +58,19 @@ class Entity:
     def gamemap(self) -> GameMap:
         return self.parent.gamemap
 
+    @property
+    def is_visible(self) -> bool:
+        """Entity is visible in the FOV"""
+        return self.gamemap.visible[self.x, self.y]
+        # if self.gamemap.visible[self.x, self.y]:
+        #     return True
+        # else:
+        #     return False
+
+    @property
+    def is_actor(self) -> bool:
+        return isinstance(self, Actor)
+
     def spawn(self: T, gamemap: GameMap, x: int, y: int) -> T:
         """Spawn a copy of this instance at the given location."""
         clone = copy.deepcopy(self)
@@ -94,14 +107,6 @@ class Entity:
         # je suppose que Gamemap est initialisé... cf les 3 lignes en commentaires hasattr...
         self.gamemap.entities.remove(self)
     
-    @property
-    def is_visible(self) -> bool:
-        """Entity is visible in the FOV"""
-        if self.gamemap.visible[self.x, self.y]:
-            return True
-        else:
-            return False
-
     def get_nearest_actor(self) -> Optional[Actor]:
         min_dist: float = 10
         dist: float = 0

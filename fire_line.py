@@ -7,7 +7,7 @@ import util.calc_functions as cf
 import line_types
 import tcod
 from entity import Actor, Entity
-from various_enum import SizeClass
+from various_enum import ItemType, SizeClass
 
 if TYPE_CHECKING:
     from game_map import GameMap
@@ -54,9 +54,6 @@ class FireLine:
         self.target = self.parent.get_target_at_location(*self.target_xy)
         self.entities = self.get_entities()
 
-        self.parent.engine.logger.debug(msg=f"COV: {[entity.name for entity in self.entities]}")
-        self.parent.engine.logger.debug(msg=f"TOT: {self.get_hit_stat(self.target_xy,self.target)}")
-
         return
 
     def get_path(self) -> List[Tuple[int, int]]:  #np.ndarray:
@@ -84,7 +81,7 @@ class FireLine:
         This will define the two bending position if direct line of fire is not available
         """
         
-        wall_cover = 15
+        wall_cover = 10
         result = []
         is_bend = False
         bend = ""
@@ -192,8 +189,9 @@ class FireLine:
         """ Provide ATT, DEF and COVER for the designated target
         and save them in this fire_line"""
 
-        if (target_xy) in list(self.combat_stat):
-            return self.combat_stat[target_xy]
+        if (self.shooter_xy+target_xy) in list(self.combat_stat):
+            # self.parent.engine.logger.debug(f"Fire line combat_stat cache : {(self.shooter_xy+target_xy)}:{self.combat_stat[(self.shooter_xy+target_xy)]}")
+            return self.combat_stat[(self.shooter_xy+target_xy)]
 
         cover = 0
         if target is None:
@@ -209,12 +207,19 @@ class FireLine:
             for entity in self.entities:
                 cover += max(0, entity.size.value + 1 - target_size)
 
+            # TODO : aiming ? range ? or consecutive shots ? and of course : wounds
             base_attack = self.shooter.fightable.attack
+            weapon = self.shooter.equipment.weapon
+            if weapon and weapon.item_type == ItemType.RANGED_WEAPON:
+                base_attack -=  2*max(0,len(self.path) - weapon.equippable.base_range)
+                base_attack = max(0, base_attack)
+
             base_defense = target.fightable.defense
             
-        if target is not self.parent.engine.player:
-            self.combat_stat[target_xy] = (base_attack, base_defense, cover)
-        
+        if not (self.shooter is self.parent.engine.player and target is self.parent.engine.player) :
+            self.combat_stat[self.shooter_xy+target_xy] = (base_attack, base_defense, cover)
+            self.parent.engine.logger.debug(f"Combat_stat add cache : {(self.shooter_xy+target_xy)}:{self.combat_stat[(self.shooter_xy+target_xy)]}")
+
         return (base_attack, base_defense, cover)
 
             
