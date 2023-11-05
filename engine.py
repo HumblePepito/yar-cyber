@@ -101,8 +101,8 @@ class Engine:
                 else:
                     string=actor.name.capitalize()
 
-                console.print(x=40,y=9+i,string=" " ,bg=progress_color(actor.fightable.hp,actor.fightable.max_hp))
-                console.print(x=42,y=9+i,string=string,fg=color.red)
+                console.print(x=40,y=11+i,string=" " ,bg=progress_color(actor.fightable.hp,actor.fightable.max_hp))
+                console.print(x=42,y=11+i,string=string,fg=color.red)
                 i=i+1
 
         #context.present(console)

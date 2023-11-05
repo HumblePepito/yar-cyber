@@ -513,20 +513,26 @@ class SingleRangedAttackHandler(SelectIndexHandler):
                     console.rgb["fg"][renderer.shift(i,j)] = color.gray
                     console.rgb["ch"][renderer.shift(i,j)] = ord("*")
 
-            try:
-                armor = lof.target.fightable.armor
-            except AttributeError:
-                armor = "na"
-            try:
-                weapon_name = f" ({lof.target.equipment.weapon.name.capitalize()})"
-            except AttributeError:
-                weapon_name = " "
 
             if lof.target and lof.target != self.engine.player:
+                try:
+                    armor = lof.target.fightable.armor
+                except AttributeError:
+                    armor = "na"
+                try:
+                    weapon_name = f" ({lof.target.equipment.weapon.name.capitalize()})"
+                except AttributeError:
+                    weapon_name = " "
                 ATT, DEF, COV = self.engine.game_map.player_lof.get_hit_stat(target_xy=(lof.target_xy))
                 console.print(x=40,y=5,string=f"Target:{lof.target.name.capitalize()} {weapon_name}")
                 console.print(x=40,y=6,string=f"Distance:{len(lof.path)} / Armor:{armor}")
                 console.print(x=40,y=7,string=f"Att:{ATT} vs Def:{DEF}+Cov:{COV}")
+
+                self.engine.game_map.hostile_lof.compute(shooter=lof.target, target_xy=(self.engine.player.x, self.engine.player.y))
+                ATT, DEF, COV = self.engine.game_map.hostile_lof.get_hit_stat(target_xy=(self.engine.player.x, self.engine.player.y), target=self.engine.player)
+                console.print(x=40,y=8,string=  "   Retaliation:",fg=color.b_darkgray)
+                console.print(x=40,y=9,string=f"   Att:{ATT} vs Def:{DEF}+Cov:{COV}",fg=color.b_darkgray)
+
             if not lof.target:
                 ATT, DEF, COV = self.engine.game_map.player_lof.get_hit_stat(target_xy=(lof.target_xy))
                 console.print(x=40,y=5,string=f"No target")
