@@ -103,8 +103,10 @@ class EquipAction(Action):
         self.entity.equipment.toggle_equip(self.item)
 
 class WaitAction(Action):
+    """ Wait also improve efficiency of cover and add aim bonus"""
     def perform(self) -> None:
-        pass
+        self.entity.hunker_stack = min(self.entity.hunker_stack+1, 2)
+        self.entity.aim_stack = min(self.entity.aim_stack+1, 3)
 
 class DescendAction(Action):
     def __init__(self, entity:Actor) -> None:
