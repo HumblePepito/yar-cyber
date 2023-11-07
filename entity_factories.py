@@ -8,7 +8,7 @@ from components import consumable, equippable, activable
 from components.equipment import Equipment
 from components.inventory import Inventory
 from components.level import Level
-from entity import Actor, Entity, Feature, Hazard, Hero, Item 
+from entity import Actor, Entity, Feature, Hazard, Item 
 from various_enum import ItemType, RenderOrder, SizeClass
 
 wall = Entity(
@@ -92,7 +92,7 @@ fire_cloud = Hazard(
     ai_cls=BaseAI,
     render_order= RenderOrder.CLOUD )
 
-player = Hero(
+player = Actor(
     char="@",
     color=color.b_white,
     name="Player",
