@@ -89,6 +89,11 @@ class EventHandler(BaseEventHandler):
         if isinstance(action_or_state, BaseEventHandler):
             return action_or_state
         if self.handle_action(action_or_state):
+            # Reset before player's turn
+            if not isinstance(action_or_state, WaitAction):
+                self.engine.player.hunker_stack = 0
+                self.engine.player.aim_stack = 0
+
             # A valid action was performed.
             if not self.engine.player.is_alive:
                 # The player was killed sometime during or after the action.
@@ -98,7 +103,7 @@ class EventHandler(BaseEventHandler):
             # elif self.engine.player.autoexplore:
             #     return AutoExploreHandler(self.engine)
             return MainGameEventHandler(self.engine)  # Return to the main handler, waiting for a keystroke
-        
+
         return self
 
     def handle_action(self, action: Optional[Action]) -> bool:
@@ -520,7 +525,7 @@ class SingleRangedAttackHandler(SelectIndexHandler):
                 except AttributeError:
                     armor = "na"
                 try:
-                    weapon_name = f" ({lof.target.equipment.weapon.name.capitalize()})"
+                    weapon_name = f"({lof.target.equipment.weapon.name.capitalize()})"
                 except AttributeError:
                     weapon_name = " "
                 ATT, DEF, COV = self.engine.game_map.player_lof.get_hit_stat(target_xy=(lof.target_xy),target=lof.target)
@@ -637,7 +642,11 @@ class MainGameEventHandler(EventHandler):
         key = event.sym
         player = self.engine.player
         modifier = event.mod
+
         
+        # Reset before player's turn
+        self.engine.game_map.hostile_lof.combat_stat = {}
+
         # action
         if key in MOVE_KEYS and not (modifier & (tcod.event.KMOD_LSHIFT | tcod.event.KMOD_RSHIFT)):
             dx, dy = MOVE_KEYS[key]

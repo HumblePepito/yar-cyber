@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import random
-import time
 from typing import List, Optional, Tuple, TYPE_CHECKING
 
 import numpy as np  # type: ignore
@@ -13,7 +12,6 @@ import exceptions
 import color 
 
 from actions import Action, BumpAction, MeleeAction, MovementAction, PickupAction, WaitAction, ChokeAction, FireAction
-from entity import Item
 
 if TYPE_CHECKING:
     from entity import Actor
@@ -75,7 +73,10 @@ class HostileEnemy(BaseAI):
 
             # Reset cache as soon as it is not player's turn
             self.engine.game_map.player_lof.combat_stat = {}
-            self.engine.game_map.hostile_lof.combat_stat = {} # TODO : at start of player turn would be better
+            # Reset sentry status
+            self.entity.hunker_stack = 0
+            self.entity.aim_stack = 0
+
 
             # bare handed
             if weapon is None:

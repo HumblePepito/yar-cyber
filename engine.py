@@ -88,6 +88,8 @@ class Engine:
         console.print(x=40,y=4,string=msg)
         if clip_msg:
             console.print(x=40+len(msg),y=4,string=clip_msg,fg=progress_color(weapon.equippable.current_clip,weapon.equippable.clip_size))
+        if self.player.aim_stack:
+            console.print(x=40+len(msg)+len(clip_msg),y=4,string=f" Aim {self.player.aim_stack}")
 
         # section message
         self.message_log.render(console,40,18,40,6)

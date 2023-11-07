@@ -157,6 +157,9 @@ class Actor(Entity):
 
         self.auto_pickup = True
         self.auto_pickup_list = []
+        self.hunker_stack = 0
+        self.aim_stack = 0
+        
 
 
     @property
@@ -167,7 +170,9 @@ class Actor(Entity):
     @property
     def see_actor(self) -> bool:
         return bool(set(self.gamemap.visible_actors)-{self})   
-    
+
+
+
 # TODO : consumable and equippable can also be two different classes for specialization sake (<> simplicity)
 class Item(Entity):
     def __init__(
@@ -198,10 +203,6 @@ class Item(Entity):
         self.equippable = equippable
         if self.equippable:
             self.equippable.parent = self        
-
-class Hero(Actor):
-    pass
-
 
 class Feature(Entity):
     def __init__(

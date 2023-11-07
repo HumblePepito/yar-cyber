@@ -280,8 +280,10 @@ class RangedWeapon(Equippable):
         for i in range(0,armor):
             if random.randint(1,3) == 3:
                damage -= 1
-        
         self.engine.logger.debug(f"Armor damage reduction:{self.base_damage + hit_margin-damage} success on {armor}")
+        if shooter.is_actor:
+            damage += shooter.aim_stack
+            self.engine.logger.debug(f"Damage aim bonus:{shooter.aim_stack}")
 
         return max(0,damage)
 

@@ -38,14 +38,16 @@ class FireLine:
 
         self.path: List[Tuple[int, int]]
         self.entities: List[Entity] = []
-        self.combat_stat: Dict = {}# TODO : populate each time a new entity is aimed at
+        self.combat_stat: Dict = {}# TODO : populate each time a new entity is aimed at / change to numpy to extend cache
+        # self.is_under_cover = []
 
     def compute(self, shooter: Entity, target_xy: Tuple[int, int]) -> None:
         """ There is only ONE fire line object.
         Compute updates all stats of the fire line based on `shooter` and `target _xy`
            * `path`: as a (x,y) list, without the shooter, with the target
            * `target` if exists (either Actor or Feature)
-           * `entities`: list of entities between shooter and target"""
+           * `entities`: list of entities between shooter and target
+           * `is_under_cover` : list of protected sector"""
         self.shooter = shooter
         self.shooter_xy = (shooter.x, shooter.y)
         self.target_xy = target_xy
@@ -68,8 +70,8 @@ class FireLine:
         To define how to bend, divide the screen into 8 parts (move direction) and et the target sector (1 to 8 clockwise)
         >>> 0->x
             |    
-            v     * 8 * 1 *
-            y      *  *  *
+            v    * 8 * 1 *
+            y     *  *  *
                 7  * * *   2
                     ***
                 *****S******
@@ -206,6 +208,13 @@ class FireLine:
             target_size = target.size.value
             for entity in self.entities:
                 cover += max(0, entity.size.value + 1 - target_size)
+            if target.is_actor and target.hunker_stack and len(self.path) > 1:
+                i,j = self.path[-2]
+                entity = self.parent.get_target_at_location(i,j)
+                if not entity and not self.parent.tiles["walkable"][i,j]:
+                    entity = self.parent.wall
+                if entity: 
+                    cover+= target.hunker_stack*(entity.size.value + 1 - target_size)
 
             # TODO : aiming ? range ? or consecutive shots ? and of course : wounds
             base_attack = self.shooter.fightable.attack
@@ -213,6 +222,9 @@ class FireLine:
             if weapon and weapon.item_type == ItemType.RANGED_WEAPON:
                 base_attack -=  2*max(0,len(self.path) - weapon.equippable.base_range)
                 base_attack = max(0, base_attack)
+                if self.shooter.aim_stack:
+                    base_attack += 3*self.shooter.aim_stack
+                    self.parent.engine.logger.debug(f"Aim bonus: lvl{self.shooter.aim_stack}:{3*self.shooter.aim_stack}")
 
             base_defense = target.fightable.defense
             
