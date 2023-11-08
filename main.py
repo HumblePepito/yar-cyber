@@ -7,6 +7,7 @@ import tcod
 
 import util.var_global
 import util.event
+from util.charmap import CHARMAP_CP437_pepito
 
 import exceptions
 import input_handlers
@@ -42,7 +43,7 @@ def main() -> None:
         # "./png/mono6x12.png", 32,8, tcod.tileset.CHARMAP_TCOD
         # "./png/mono12x24.png", 32,8, tcod.tileset.CHARMAP_TCOD
         # "./png/Cheepicus_16x16.png", 16, 16, tcod.tileset.CHARMAP_CP437
-        "./png/Bisasam_20x20_ascii.png", 16, 16, tcod.tileset.CHARMAP_CP437
+        "./png/Bisasam_20x20_ascii.png", 16, 16, CHARMAP_CP437_pepito
     #     "./png/chozo32.png", 40, 27, tcod.tileset.CHARMAP_TCOD
     
     )
