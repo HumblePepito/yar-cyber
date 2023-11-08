@@ -15,7 +15,7 @@ import input_handlers
 import color
 import setup_game
 from engine import Engine
-from input_handlers import MainGameEventHandler, GameOverEventHandler
+from input_handlers import MainGameEventHandler
 
 from renderer import Renderer
 
@@ -42,7 +42,7 @@ def main() -> None:
     tileset = tcod.tileset.load_tilesheet(
         # "./png/mono6x12.png", 32,8, tcod.tileset.CHARMAP_TCOD
         # "./png/mono12x24.png", 32,8, tcod.tileset.CHARMAP_TCOD
-        # "./png/Cheepicus_16x16.png", 16, 16, tcod.tileset.CHARMAP_CP437
+        # "./png/Cheepicus_16x16.png", 16, 16, CHARMAP_CP437_pepito
         "./png/Bisasam_20x20_ascii.png", 16, 16, CHARMAP_CP437_pepito
     #     "./png/chozo32.png", 40, 27, tcod.tileset.CHARMAP_TCOD
     
@@ -63,46 +63,10 @@ def main() -> None:
     renderer = Renderer(context=context, console=tcod.console.Console(screen_width, screen_height, order="F"))
 
     # Boucle principale !!
-    """
-    try:
-        while True:
-            # version intiale (v6) : engine.render(console=root_console, context=context)
-            #   le clear et le present dans engine ; pas de on_render ni de convert (pour la souris)
-            # version 13
-            # root_console.clear()
-            # handler.on_render(console=root_console)
-            # context.present(root_console)
-            renderer.console.clear()
-            handler.on_render(renderer=renderer)
-            renderer.context.present(renderer.console)
-
-            try:
-                for event in tcod.event.wait():
-                    #context.convert_event(event) # ca, c'est pour la souris
-                    handler = handler.handle_events(event)
-            except Exception:  # Handle exceptions in game.
-                traceback.print_exc()  # Print error to stderr.
-                # Then print the error to the message log.
-                handler.engine.message_log.add_message(traceback.format_exc(), color.error) # nuance avec isinstance
-    except exceptions.QuitWithoutSaving:
-        raise
-    except SystemExit:  # Save and quit.
-        save_game(handler, "savegame.sav")
-        raise
-    except BaseException:  # Save on any other unexpected exception.
-        save_game(handler, "savegame.sav")
-        raise
-    """
     go_draw = True
     engine_ok = False
     try:
         while True:
-            # version intiale (v6) : engine.render(console=root_console, context=context)
-            #   le clear et le present dans engine ; pas de on_render ni de convert (pour la souris)
-            # version 13
-            # root_console.clear()
-            # handler.on_render(console=root_console)
-            # context.present(root_console)
 
             if not engine_ok:
                 try:
