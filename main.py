@@ -53,8 +53,10 @@ def main() -> None:
     context = tcod.context.new(
         x=0,
         y=0,
-        columns=screen_width,
-        rows=screen_height,
+        # columns=screen_width,
+        # rows=screen_height,
+        width=1580,
+        height=480,
         tileset=tileset,
         title="Sci-fi Roguelike Tutorial",
         vsync=True,
@@ -71,7 +73,7 @@ def main() -> None:
             if not engine_ok:
                 try:
                     # Some initialization
-                    handler.engine.message_log.add_message("Engine initialized",color.debug)
+                    logger.info("Engine initialized")
                     engine_ok = True
                     engine: Engine = handler.engine
                     renderer.map_width = engine.game_map.width
@@ -107,14 +109,14 @@ def main() -> None:
                             # Stop auto if a key is pressed
                             if isinstance(event, tcod.event.KeyDown):
                                 engine.player.ai.is_auto = False
-                                engine.message_log.add_message(f"Auto-mode {engine.player.ai.is_auto}",color.debug)
+                                engine.logger(f"Auto-mode {engine.player.ai.is_auto}")
                                 handler = MainGameEventHandler(engine)
 
                         ##### Events that stops the auto loop #####
                         # Check FOV
                         if engine.player.see_actor:
                             engine.player.ai.is_auto = False
-                            engine.message_log.add_message(f"Auto-mode {engine.player.ai.is_auto}",color.debug)
+                            engine.logger(f"Auto-mode {engine.player.ai.is_auto}")
                             handler = MainGameEventHandler(engine)
                         # Check if player is still alive (needless but just in case)
                         # if not engine.player.is_alive:
