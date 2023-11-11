@@ -258,6 +258,7 @@ class RangedWeapon(Equippable):
                     entity = random.choices(fire_line.entities,entity_weighted_chance_values)
                     hit_margin = 0
                     target = entity[0]
+                    self.engine.logger.debug(f"Interception:{target.name}")
                 else:
                     if target:
                         hit_margin = None

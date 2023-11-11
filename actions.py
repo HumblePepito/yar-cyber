@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 import time
+import random
 
 from typing import List, Optional, Tuple, TYPE_CHECKING
 from entity import Actor
@@ -178,19 +179,59 @@ class MeleeAction(ActionWithDirection):
         
         if not target:
             raise exceptions.Impossible("Nothing to attack.")
+
+        fire_line = self.engine.game_map.get_fire_line(self.entity)
+        base_attack, base_defense, cover = fire_line.get_hit_stat((target.x,target.y),target)
+
+        # TODO : extra modifiers (most are in get_hit_stat)
+        attack = base_attack
+        defense = base_defense
+
+        # Roll !
+        attack_success = 0
+        defense_success = 0
+        for i in range(0,attack):
+            if random.randint(1,3) == 3:
+                attack_success += 1
+        for i in range(0,defense):
+            if random.randint(1,3) == 3:
+                defense_success += 1
         
-        damage = self.entity.fightable.attack - target.fightable.armor
+        self.engine.logger.debug(f"Att:{attack_success} success on {attack}, Def:{defense_success} on {defense}")
+
+
+        if attack_success:
+            hit_margin = attack_success - defense_success
+        else:
+            hit_margin = -1 # no success is always a miss
+
         attack_desc = f"{self.entity.name.capitalize()} attacks {target.name}"
         if self.entity is self.engine.player:
             attack_color = color.player_atk
         else:
             attack_color = color.enemy_atk
 
-        if damage > 0:
+        if hit_margin >= 0:
+            damage = self.entity.fightable.attack + hit_margin
+
             self.engine.message_log.add_message(f"{attack_desc} for {damage} hit points.",attack_color)
             target.fightable.hp -= damage
         else:
-            self.engine.message_log.add_message(f"{attack_desc} but does no damage.", attack_color)
+            self.engine.message_log.add_message(f"{attack_desc} but missed.", attack_color)
+
+        
+        # damage = self.entity.fightable.attack - target.fightable.armor
+        # attack_desc = f"{self.entity.name.capitalize()} attacks {target.name}"
+        # if self.entity is self.engine.player:
+        #     attack_color = color.player_atk
+        # else:
+        #     attack_color = color.enemy_atk
+
+        # if damage > 0:
+        #     self.engine.message_log.add_message(f"{attack_desc} for {damage} hit points.",attack_color)
+        #     target.fightable.hp -= damage
+        # else:
+        #     self.engine.message_log.add_message(f"{attack_desc} but does no damage.", attack_color)
 
 
 class MovementAction(ActionWithDirection):
