@@ -23,10 +23,8 @@ class Renderer:
     def __init__(self, stdscr: curses._CursesWindow, console: Console):
         self.stdscr = stdscr
         self.console = console
-        self.map_width = 0
-        self.map_height = 0
-        self.view_width = 39 # 59
-        self.view_height = 23 # 39
+        self.view_width = 39    # = initial width 79 -30
+        self.view_height = 23   # = initial height 24 -1
         self.camera = Camera(0,0)
 
         self.context = Context(stdscr)

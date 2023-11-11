@@ -116,8 +116,6 @@ def generate_dungeon(
     engine: Engine,
 ) -> GameMap:
 
-    #dungeon = GameMap(map_width, map_height, {player,})
-
     """Generate a new dungeon map."""
     player = engine.player
     dungeon = GameMap(engine, map_width, map_height, [player])

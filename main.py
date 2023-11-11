@@ -27,9 +27,11 @@ def save_game(handler: input_handlers.BaseEventHandler, filename: str) -> None:
 
 def main() -> None:
 
+    FLAGS = tcod.context.SDL_WINDOW_RESIZABLE
     # size of console
     screen_width = 79
     screen_height = 24 #50
+#https://python-tcod.readthedocs.io/en/latest/tcod/getting-started.html#dynamically-sized-console
 
     # log tool
     Log_Format = "%(levelname)s %(asctime)s - %(message)s"
@@ -53,41 +55,46 @@ def main() -> None:
     context = tcod.context.new(
         x=0,
         y=0,
-        # columns=screen_width,
-        # rows=screen_height,
+        columns=screen_width,
+        rows=screen_height,
         width=1580,
         height=480,
         tileset=tileset,
         title="Sci-fi Roguelike Tutorial",
         vsync=True,
+        sdl_window_flags=FLAGS
     )
     # Use of renderer instead of console in order to add both Console & Context to the engine and use it in auto-Handlers
-    renderer = Renderer(context=context, console=tcod.console.Console(screen_width, screen_height, order="F"))
+    renderer = Renderer(context=context, console=context.new_console(min_columns=screen_width, min_rows=screen_height, order="F"))
 
     # Boucle principale !!
     go_draw = True
     engine_ok = False
     try:
         while True:
+            size = renderer.context.recommended_console_size()
+            renderer.view_width=size[0]-40
+            renderer.view_height=size[1]-1
+            if size[0] <screen_width or size[1] < screen_height:
+                print("Min size of console is 79x24.")
+                raise SystemExit
 
             if not engine_ok:
                 try:
                     # Some initialization
-                    logger.info("Engine initialized")
                     engine_ok = True
                     engine: Engine = handler.engine
-                    renderer.map_width = engine.game_map.width
-                    renderer.map_height = engine.game_map.height
                     renderer.camera.x = engine.player.x
                     renderer.camera.y = engine.player.y
                     engine.logger = logger
+                    logger.info("Engine initialized")
                 except AttributeError:
                     engine_ok = False
 
             if go_draw:
                 renderer.console.clear()
                 handler.on_render(renderer=renderer)
-                renderer.context.present(renderer.console)
+                renderer.context.present(renderer.console, keep_aspect= True, integer_scaling=True)
 
             try:
                 # menus before game start
@@ -109,14 +116,14 @@ def main() -> None:
                             # Stop auto if a key is pressed
                             if isinstance(event, tcod.event.KeyDown):
                                 engine.player.ai.is_auto = False
-                                engine.logger(f"Auto-mode {engine.player.ai.is_auto}")
+                                engine.logger.info(f"Auto-mode {engine.player.ai.is_auto}")
                                 handler = MainGameEventHandler(engine)
 
                         ##### Events that stops the auto loop #####
                         # Check FOV
                         if engine.player.see_actor:
                             engine.player.ai.is_auto = False
-                            engine.logger(f"Auto-mode {engine.player.ai.is_auto}")
+                            engine.logger.info(f"Auto-mode {engine.player.ai.is_auto}")
                             handler = MainGameEventHandler(engine)
                         # Check if player is still alive (needless but just in case)
                         # if not engine.player.is_alive:

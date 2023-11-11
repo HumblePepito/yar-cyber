@@ -20,10 +20,8 @@ class Renderer:
     def __init__(self, context: Context, console: Console):
         self.context = context
         self.console = console
-        self.map_width = 0
-        self.map_height = 0
-        self.view_width = 39 # 59
-        self.view_height = 23 # 39
+        self.view_width = 39    # = initial width 79 -30
+        self.view_height = 23   # = initial height 24 -1
         self.camera = Camera(0,0)
 
     def shift(self,x,y) -> (int,int):

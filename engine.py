@@ -59,21 +59,22 @@ class Engine:
         console = renderer.console
         if renderer and not self.renderer:
             self.renderer = renderer
-            self.message_log.add_message("init of engine's renderer",color.debug)
+            self.logger.info("init of engine's renderer")
 
+        X_info = self.renderer.view_width+1
         # section carte, centered on player
         # self.game_map.render(renderer, self.view_width, self.view_height)
         self.game_map.render(renderer)
 
         # section personnage
         console.print(
-            x=40,
+            x=X_info,
             y=0,
             string=f"HP: {self.player.fightable.hp}/{self.player.fightable.max_hp}")
-        render_ascii_bar(console,"=",progress_color(self.player.fightable.hp,self.player.fightable.max_hp),"-",color.b_darkgray,50,0,self.player.fightable.hp,self.player.fightable.max_hp,24)
+        render_ascii_bar(console,"=",progress_color(self.player.fightable.hp,self.player.fightable.max_hp),"-",color.b_darkgray,X_info+10,0,self.player.fightable.hp,self.player.fightable.max_hp,24)
 
-        # console.print(x=40,y=1,string=f"Floor level :  {self.game_world.current_floor}")
-        console.print(x=40,y=2,string=f"Player level : {self.player.level.current_level} - XP: {self.player.level.current_xp}/{self.player.level.experience_to_next_level}")
+        console.print(x=X_info,y=1,string=f"Floor level :  {self.game_world.current_floor}")
+        console.print(x=X_info,y=2,string=f"Player level : {self.player.level.current_level} - XP: {self.player.level.current_xp}/{self.player.level.experience_to_next_level}")
 
         weapon = self.player.equipment.weapon
         clip_msg = ""
@@ -85,14 +86,14 @@ class Engine:
         elif weapon.item_type == ItemType.MELEE_WEAPON:
             msg = f"Weapon: {weapon.name}"
         
-        console.print(x=40,y=4,string=msg)
+        console.print(x=X_info,y=4,string=msg)
         if clip_msg:
-            console.print(x=40+len(msg),y=4,string=clip_msg,fg=progress_color(weapon.equippable.current_clip,weapon.equippable.clip_size))
+            console.print(x=X_info+len(msg),y=4,string=clip_msg,fg=progress_color(weapon.equippable.current_clip,weapon.equippable.clip_size))
         if self.player.aim_stack:
-            console.print(x=40+len(msg)+len(clip_msg),y=4,string=f" Aim {self.player.aim_stack}")
+            console.print(x=X_info+len(msg)+len(clip_msg),y=4,string=f" Aim {self.player.aim_stack}")
 
         # section message
-        self.message_log.render(console,40,18,40,6)
+        self.message_log.render(console,X_info,18,X_info,6)
 
         # section liste monstres
         i=0
@@ -104,14 +105,9 @@ class Engine:
                 else:
                     string=actor.name.capitalize()
 
-                console.print(x=40,y=11+i,string=" " ,bg=progress_color(actor.fightable.hp,actor.fightable.max_hp))
-                console.print(x=42,y=11+i,string=string,fg=color.red)
+                console.print(x=X_info,y=11+i,string=" " ,bg=progress_color(actor.fightable.hp,actor.fightable.max_hp))
+                console.print(x=X_info+2,y=11+i,string=string,fg=color.red)
                 i=i+1
-
-        #context.present(console)
-
-        #console.clear()
-        #print(console)
 
     def save_as(self, filename: str) -> None:
         """Save this Engine instance as a compressed file."""
