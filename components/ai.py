@@ -11,7 +11,7 @@ import tcod
 import exceptions
 import color 
 
-from actions import Action, BumpAction, MeleeAction, MovementAction, PickupAction, WaitAction, ChokeAction, FireAction
+from actions import Action, BumpAction, MeleeAction, MovementAction, PickupAction, Reload, WaitAction, ChokeAction, FireAction
 
 if TYPE_CHECKING:
     from entity import Actor
@@ -85,12 +85,15 @@ class HostileEnemy(BaseAI):
             # ranged weapon
             else:
                 if weapon.item_type == ItemType.RANGED_WEAPON:
-                    if self.entity.distance(target.x, target.y) <= weapon.equippable.base_range:
-                        self.engine.game_map.hostile_lof.compute(shooter= self.entity, target_xy=(target.x, target.y))
-                        self.engine.logger.debug([entity.name for entity in self.engine.game_map.player_lof.entities])
-                        self.path = self.get_path_to(target.x, target.y)
-                        # add a return to quit here this perform
-                        return FireAction(self.entity, target).perform()
+                    if weapon.equippable.current_clip > 0:
+                        if self.entity.distance(target.x, target.y) <= weapon.equippable.base_range:
+                            self.engine.game_map.hostile_lof.compute(shooter= self.entity, target_xy=(target.x, target.y))
+                            self.engine.logger.debug([entity.name for entity in self.engine.game_map.player_lof.entities])
+                            self.path = self.get_path_to(target.x, target.y)
+                            # add a return to quit here this perform
+                            return FireAction(self.entity, target).perform()
+                    else:
+                        return Reload(self.entity).perform()
             # melee weapon
                 else:
                     if distance <= 1:
