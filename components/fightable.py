@@ -28,6 +28,7 @@ class Fightable(BaseComponent):
         self.base_defense = base_defense
         self.base_armor = base_armor
         self.base_attack = base_attack
+        self.sp = 0
 
     @property
     def hp(self) -> int:
@@ -35,7 +36,7 @@ class Fightable(BaseComponent):
     
     @property
     def defense(self) -> int:
-        return self.base_defense + self.defense_bonus
+        return self.base_defense + self.defense_bonus - self.sp//3
 
     @property
     def armor(self) -> int:
@@ -43,7 +44,7 @@ class Fightable(BaseComponent):
 
     @property
     def attack(self) -> int:
-        return self.base_attack + self.attack_bonus
+        return self.base_attack + self.attack_bonus- self.sp//3
 
 
     @property

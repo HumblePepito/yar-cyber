@@ -158,8 +158,12 @@ class RangedWeapon(Equippable):
                     attack_color = color.enemy_atk
 
                 if damage > 0:
-                    self.engine.message_log.add_message(f"{attack_desc} for {damage} hit points.",attack_color)
-                    target.fightable.hp -= damage
+                    if damage > target.fightable.armor:
+                        self.engine.message_log.add_message(f"{attack_desc} for {damage} hit points.",attack_color)
+                        target.fightable.hp -= damage
+                    else:
+                        self.engine.message_log.add_message(f"{attack_desc} for {damage} stun points.",attack_color)
+                        target.fightable.sp += damage
                 else:
                     self.engine.message_log.add_message(f"{attack_desc} but does no damage.", attack_color)
 

@@ -67,14 +67,19 @@ class Engine:
         self.game_map.render(renderer)
 
         # section personnage
-        console.print(
-            x=X_info,
-            y=0,
-            string=f"HP: {self.player.fightable.hp}/{self.player.fightable.max_hp}")
-        render_ascii_bar(console,"=",progress_color(self.player.fightable.hp,self.player.fightable.max_hp),"-",color.b_darkgray,X_info+10,0,self.player.fightable.hp,self.player.fightable.max_hp,24)
+        msg=f"Health:{self.player.fightable.hp}/{self.player.fightable.max_hp}"
+        console.print(x=X_info, y=0, string=msg)
+        render_ascii_bar(console,"=",progress_color(self.player.fightable.hp,self.player.fightable.max_hp),"-",color.b_darkgray,X_info+len(msg)+1,0,self.player.fightable.hp,self.player.fightable.max_hp,24)
+        
+        console.print(x=X_info, y=1, string=f"Stun:  {self.player.fightable.sp}")
+        if self.player.fightable.sp <= 24:
+            render_ascii_bar(console,"*",color.b_blue,"-",color.b_darkgray,X_info+len(msg)+1,1,self.player.fightable.sp,24,24)
+        else:
+            render_ascii_bar(console,"+",color.b_cyan,"*",color.b_blue,X_info+len(msg)+1,1,self.player.fightable.sp-24,24,24)
 
-        console.print(x=X_info,y=1,string=f"Floor level :  {self.game_world.current_floor}")
-        console.print(x=X_info,y=2,string=f"Player level : {self.player.level.current_level} - XP: {self.player.level.current_xp}/{self.player.level.experience_to_next_level}")
+
+        console.print(x=X_info,y=2,string=f"Floor level:  {self.game_world.current_floor}")
+        console.print(x=X_info,y=3,string=f"Player level: {self.player.level.current_level} - XP: {self.player.level.current_xp}/{self.player.level.experience_to_next_level}")
 
         weapon = self.player.equipment.weapon
         clip_msg = ""

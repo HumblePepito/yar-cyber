@@ -89,12 +89,13 @@ class EventHandler(BaseEventHandler):
         if isinstance(action_or_state, BaseEventHandler):
             return action_or_state
         if self.handle_action(action_or_state):
-            # Reset before player's turn
+            # A valid action was performed.
+            self.end_turn()
+            # Reset if any action was taken
             if not isinstance(action_or_state, WaitAction):
                 self.engine.player.hunker_stack = 0
                 self.engine.player.aim_stack = 0
 
-            # A valid action was performed.
             if not self.engine.player.is_alive:
                 # The player was killed sometime during or after the action.
                 return GameOverEventHandler(self.engine)
@@ -121,13 +122,18 @@ class EventHandler(BaseEventHandler):
             return False # skip enemy turn on exception
         
         self.engine.handle_enemy_turns()
-        self.engine.update_fov() # Update the FOV before the players next action.
+        self.engine.update_fov() # Update the FOV before the players next action.        
+
         return True
 
     def on_render(self, renderer: Renderer) -> None:
         # Main rendering call -> engine.reder will take care of all inputs in the console
         self.engine.render(renderer)
 
+    def end_turn(self) -> None:
+        """Deal recurrent action"""
+        for actor in self.engine.game_map.actors:
+            actor.fightable.sp = max(0, actor.fightable.sp-1)
 
 class AskUserEventHandler(EventHandler):
     """Handles user input for actions which require special input."""
