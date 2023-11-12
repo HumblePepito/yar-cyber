@@ -33,6 +33,9 @@ def wait() -> Iterator[Any]:
         event = tcod.event.KeyDown(scancode=0,sym=key,mod=mod)
         event.type = "KEYDOWN"
 
+        # if key == curses.KEY_RESIZE or key == curses.KEY_MAX:
+        #     event = tcod.event.WindowEvent()
+        
         return [event] # TODO : iterator ??
 
 def get() -> Iterator[Any]:

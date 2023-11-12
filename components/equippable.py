@@ -134,7 +134,7 @@ class RangedWeapon(Equippable):
                     if self.engine.game_map.tiles["walkable"][x,y] and self.engine.game_map.visible[x,y]:
                         console.rgb["fg"][self.engine.renderer.shift(x,y)] = color.n_red  # add color of weapon 
                         console.rgb["ch"][self.engine.renderer.shift(x,y)] = ord("*")
-                context.present(console)
+                context.present(console, keep_aspect= True, integer_scaling=True)
                 time.sleep(0.05)
 
             else:
@@ -171,7 +171,7 @@ class RangedWeapon(Equippable):
                     else:
                         console.rgb["fg"][self.engine.renderer.shift(i,j)] = color.n_red
                         console.rgb["ch"][self.engine.renderer.shift(i,j)] = ord("*")
-                context.present(console)
+                context.present(console, keep_aspect= True, integer_scaling=True)
                 time.sleep(0.05)
         else:
             if target:

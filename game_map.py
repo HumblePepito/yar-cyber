@@ -163,7 +163,7 @@ class GameMap:
         """Slice this maps contents down to the view size based on camera position"""
         view_width, view_height = renderer.view_width, renderer.view_height
         if view_width//2 == view_width/2 or view_height//2 == view_height/2:
-            print("Dimension must be uneven")
+            print("View dimension must be uneven")
             raise
 
         console = renderer.console

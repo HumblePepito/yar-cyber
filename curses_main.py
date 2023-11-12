@@ -36,9 +36,9 @@ def main(stdscr) -> None:
     util.var_global.xterm = stdscr
 
     # size of console
-    screen_width = 79
-    screen_height = 24 #50
-
+    # screen_width = 79
+    # screen_height = 24 #50
+    screen_width, screen_height = curses.COLS-1, curses.LINES
     # log tool
     Log_Format = "%(levelname)s %(asctime)s - %(message)s"
     logging.basicConfig(
@@ -59,10 +59,9 @@ def main(stdscr) -> None:
             i+=1
             curses.init_pair(i,fg,bg)
     
-
     handler: input_handlers.BaseEventHandler = setup_game.MainMenu() # gets back with MainGameEventHandler
 
-    renderer = Renderer(stdscr=stdscr, console=tcod.Console(screen_width, screen_height, order="F"))
+    renderer = Renderer(stdscr=stdscr, console=tcod.console.Console(screen_width, screen_height, order="F"))
 
     renderer.console.clear()
     handler.on_render(renderer=renderer)
@@ -70,27 +69,43 @@ def main(stdscr) -> None:
 
     go_draw = True
     engine_ok = False
+    resize = True # Double check init if xterm is already greater
 
     try:
         while True:
-            # version intiale (v6) : engine.render(console=root_console, context=context)
-            #   le clear et le present dans engine ; pas de on_render ni de convert (pour la souris)
-            # version 13
-            # root_console.clear()
-            # handler.on_render(console=root_console)
-            # context.present(root_console)
+            if resize:
+                resize = False
+                curses.resizeterm(*stdscr.getmaxyx())
+                logger.debug(f"stdscr cols={curses.COLS} lines={curses.LINES}")
+                stdscr.getch() # to purge signal from resizeterm (and avoid infinite loop)
+                renderer.view_width=(curses.COLS-1)-40
+                if renderer.view_width//2 == renderer.view_width/2:
+                    renderer.view_width -= 1
+                renderer.view_height=curses.LINES-1
+                if renderer.view_height//2 == renderer.view_height/2:
+                    renderer.view_height -= 1
+
+                renderer.console = tcod.console.Console(curses.COLS-1, curses.LINES, order="F")
+                renderer.context.stdscr = stdscr
+
+                if curses.COLS <screen_width or curses.LINES < screen_height:
+                    print("Min size of console is 80x24.")
+                    raise SystemExit
+                if renderer.view_width > 80 or renderer.view_height > 80:
+                    print("Max size of console is 80x80.")
+                    raise SystemExit                
+                
+                continue
 
             if not engine_ok:
                 try:
                     # Some initialization
-                    handler.engine.message_log.add_message("Engine initialized",color.debug)
                     engine_ok = True
                     engine: Engine = handler.engine
-                    renderer.map_width = engine.game_map.width
-                    renderer.map_height = engine.game_map.height
                     renderer.camera.x = engine.player.x
                     renderer.camera.y = engine.player.y
                     engine.logger = logger
+                    logger.info("Engine initialized")
                 except AttributeError:
                     engine_ok = False
 
@@ -110,7 +125,12 @@ def main(stdscr) -> None:
                         for event in util.event.wait():
                             if isinstance(event, tcod.event.KeyDown):
                                 go_draw = True
-                            handler = handler.handle_events(event)
+                                handler = handler.handle_events(event)
+
+                            # elif isinstance(event, tcod.event.WindowEvent):
+                                if event.sym.value == curses.KEY_RESIZE:
+                                    resize = True
+
                 # auto mode
                 else:
                     if engine.player.ai.is_auto:
@@ -118,14 +138,14 @@ def main(stdscr) -> None:
                         for event in util.event.get():
                             if isinstance(event, tcod.event.KeyDown):
                                 engine.player.ai.is_auto = False
-                                engine.message_log.add_message(f"Auto-mode {engine.player.ai.is_auto}",color.debug)
+                                engine.logger.info(f"Auto-mode {engine.player.ai.is_auto}")
                                 handler = MainGameEventHandler(engine)
 
                         ##### Events that stops the auto loop #####
                         # Check FOV
                         if engine.player.see_actor:
                             engine.player.ai.is_auto = False
-                            engine.message_log.add_message(f"Auto-mode {engine.player.ai.is_auto}",color.debug)
+                            engine.logger.info(f"Auto-mode {engine.player.ai.is_auto}")
                             handler = MainGameEventHandler(engine)
                         # Check if player is still alive (needless but just in case)
                         # if not engine.player.is_alive:

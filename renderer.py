@@ -20,7 +20,7 @@ class Renderer:
     def __init__(self, context: Context, console: Console):
         self.context = context
         self.console = console
-        self.view_width = 39    # = initial width 79 -30
+        self.view_width = 39    # = initial width 79 -40
         self.view_height = 23   # = initial height 24 -1
         self.camera = Camera(0,0)
 

@@ -191,7 +191,7 @@ class ExploreMap(BaseAI):
         self.previous_ai = previous_ai
         self.is_auto = True
         self.target = "explore" # TODO TODO : use a type enum to define the different target
-        self.engine.message_log.add_message(f"Auto-mode {self.is_auto}",color.debug)
+        self.engine.logger.info(f"Auto-mode {self.is_auto}")
 
     def perform(self) -> None:
         # time.sleep(0.03)
@@ -217,7 +217,7 @@ class ExploreMap(BaseAI):
             return MovementAction(self.entity, dest_x - self.entity.x, dest_y - self.entity.y).perform()
         except exceptions.AutoQuit as exc:
             self.is_auto = False
-            self.engine.message_log.add_message(f"Auto-mode {self.is_auto}",color.debug)
+            self.engine.logger.info(f"Auto-mode {self.is_auto}")
             raise exceptions.Impossible(exc.args[0])
 
     def path_to_nearest_unexplored_tiles(self) -> List[Tuple[int, int]]:
@@ -273,7 +273,7 @@ class MoveTo(BaseAI):
         self.is_auto = True
         self.target = "destination" # TODO : use a type enum to define the different target
         self.dest_xy = dest_xy
-        self.engine.message_log.add_message(f"Auto-mode {self.is_auto}",color.debug)
+        self.engine.logger.info(f"Auto-mode {self.is_auto}")
 
     def perform(self) -> None:
         # time.sleep(0.5)
@@ -293,7 +293,7 @@ class MoveTo(BaseAI):
 
         if len(self.path) == 0:
             self.is_auto = False
-            self.engine.message_log.add_message(f"Auto-mode {self.is_auto}",color.debug)
+            self.engine.logger.info(f"Auto-mode {self.is_auto}")
             raise exceptions.Impossible("Here you are.")
 
         dest_x, dest_y = self.path.pop(0)

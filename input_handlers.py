@@ -519,6 +519,7 @@ class SingleRangedAttackHandler(SelectIndexHandler):
                     console.rgb["ch"][renderer.shift(i,j)] = ord("*")
 
 
+            X_info = self.engine.renderer.view_width+1
             if lof.target and lof.target != self.engine.player:
                 try:
                     armor = lof.target.fightable.armor
@@ -529,20 +530,20 @@ class SingleRangedAttackHandler(SelectIndexHandler):
                 except AttributeError:
                     weapon_name = " "
                 ATT, DEF, COV = self.engine.game_map.player_lof.get_hit_stat(target_xy=(lof.target_xy),target=lof.target)
-                console.print(x=40,y=5,string=f"Target:{lof.target.name.capitalize()} {weapon_name}")
-                console.print(x=40,y=6,string=f"Distance:{len(lof.path)} / Armor:{armor}")
-                console.print(x=40,y=7,string=f"Att:{ATT} vs Def:{DEF}+Cov:{COV}")
+                console.print(x=X_info,y=5,string=f"Target:{lof.target.name.capitalize()} {weapon_name}")
+                console.print(x=X_info,y=6,string=f"Distance:{len(lof.path)} / Armor:{armor}")
+                console.print(x=X_info,y=7,string=f"Att:{ATT} vs Def:{DEF}+Cov:{COV}")
 
                 if lof.target.is_actor:
                     self.engine.game_map.hostile_lof.compute(shooter=lof.target, target_xy=(self.engine.player.x, self.engine.player.y))
                     ATT, DEF, COV = self.engine.game_map.hostile_lof.get_hit_stat(target_xy=(self.engine.player.x, self.engine.player.y), target=self.engine.player)
-                    console.print(x=40,y=8,string=  "   Retaliation:",fg=color.b_darkgray)
-                    console.print(x=40,y=9,string=f"   Att:{ATT} vs Def:{DEF}+Cov:{COV}",fg=color.b_darkgray)
+                    console.print(x=X_info,y=8,string=  "   Retaliation:",fg=color.b_darkgray)
+                    console.print(x=X_info,y=9,string=f"   Att:{ATT} vs Def:{DEF}+Cov:{COV}",fg=color.b_darkgray)
 
             if not lof.target:
                 ATT, DEF, COV = self.engine.game_map.player_lof.get_hit_stat(target_xy=(lof.target_xy))
-                console.print(x=40,y=5,string=f"No target", fg=color.b_darkgray)
-                console.print(x=40,y=6,string=f"Distance:{len(lof.path)} / Cov:{COV}", fg=color.b_darkgray)
+                console.print(x=X_info,y=5,string=f"No target", fg=color.b_darkgray)
+                console.print(x=X_info,y=6,string=f"Distance:{len(lof.path)} / Cov:{COV}", fg=color.b_darkgray)
            
 
 class AreaRangedAttackHandler(SelectIndexHandler):
@@ -610,6 +611,7 @@ class AreaRangedAttackHandler(SelectIndexHandler):
                             console.rgb["fg"][renderer.shift(x+i,y+j)] = color.n_gray
                             console.rgb["ch"][renderer.shift(x+i,y+j)] = ord("*")
 
+            X_info = self.engine.renderer.view_width+1
             try:
                 armor = lof.target.fightable.armor
             except AttributeError:
@@ -621,15 +623,15 @@ class AreaRangedAttackHandler(SelectIndexHandler):
 
             if lof.target and lof.target != self.engine.player:
                 ATT, DEF, COV = self.engine.game_map.player_lof.get_hit_stat(target_xy=(lof.target_xy), target=lof.target)
-                console.print(x=40,y=5,string=f"Target:{lof.target.name.capitalize()} {weapon_name}")
-                console.print(x=40,y=6,string=f"Distance:{len(lof.path)} / Armor:{armor}")
-                console.print(x=40,y=7,string=f"Att:{ATT} vs Def:{DEF}+Cov:{COV}")
+                console.print(x=X_info,y=5,string=f"Target:{lof.target.name.capitalize()} {weapon_name}")
+                console.print(x=X_info,y=6,string=f"Distance:{len(lof.path)} / Armor:{armor}")
+                console.print(x=X_info,y=7,string=f"Att:{ATT} vs Def:{DEF}+Cov:{COV}")
 
 
             if not lof.target:
                 ATT, DEF, COV = self.engine.game_map.player_lof.get_hit_stat(target_xy=(lof.target_xy))
-                console.print(x=40,y=5,string=f"No target")
-                console.print(x=40,y=6,string=f"Distance:{len(lof.path)} / Cov:{COV}")
+                console.print(x=X_info,y=5,string=f"No target")
+                console.print(x=X_info,y=6,string=f"Distance:{len(lof.path)} / Cov:{COV}")
 
     def on_index_selected(self, x: int, y: int) -> Optional[Action]:
         return self.callback((x, y))

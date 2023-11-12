@@ -29,7 +29,7 @@ def main() -> None:
 
     FLAGS = tcod.context.SDL_WINDOW_RESIZABLE
     # size of console
-    screen_width = 79
+    screen_width = 80
     screen_height = 24 #50
 #https://python-tcod.readthedocs.io/en/latest/tcod/getting-started.html#dynamically-sized-console
 
@@ -57,8 +57,8 @@ def main() -> None:
         y=0,
         columns=screen_width,
         rows=screen_height,
-        width=1580,
-        height=480,
+        # width=1600,
+        # height=480,
         tileset=tileset,
         title="Sci-fi Roguelike Tutorial",
         vsync=True,
@@ -70,14 +70,28 @@ def main() -> None:
     # Boucle principale !!
     go_draw = True
     engine_ok = False
+    resize = False
     try:
         while True:
-            size = renderer.context.recommended_console_size()
-            renderer.view_width=size[0]-40
-            renderer.view_height=size[1]-1
-            if size[0] <screen_width or size[1] < screen_height:
-                print("Min size of console is 79x24.")
-                raise SystemExit
+            if resize:
+                resize = False
+                size = renderer.context.recommended_console_size()
+                logger.debug(f"context cols={size[0]} lines={size[1]}")
+                renderer.view_width=size[0]-41
+                if renderer.view_width//2 == renderer.view_width/2:
+                    renderer.view_width -= 1
+                renderer.view_height=size[1]-1
+                if renderer.view_height//2 == renderer.view_height/2:
+                    renderer.view_height -= 1
+                
+                renderer.console = context.new_console(order="F")
+
+                # renderer.view_width=size[0]-40
+                # renderer.view_height=size[1]-1
+                logger.debug(f"width={renderer.view_width} height={renderer.view_height}")
+                if size[0] <screen_width or size[1] < screen_height:
+                    print("Min size of console is 80x24.")
+                    raise SystemExit
 
             if not engine_ok:
                 try:
@@ -108,7 +122,9 @@ def main() -> None:
                         for event in util.event.wait():
                             if isinstance(event, tcod.event.KeyDown):
                                 go_draw = True
-                            handler = handler.handle_events(event)
+                                handler = handler.handle_events(event)
+                            elif isinstance(event, tcod.event.WindowResized):
+                                resize = True
                 # auto mode
                 else:
                     if engine.player.ai.is_auto:
