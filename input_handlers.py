@@ -90,7 +90,7 @@ class EventHandler(BaseEventHandler):
             return action_or_state
         if self.handle_action(action_or_state):
             # A valid action was performed.
-            self.end_turn()
+
             # Reset if any action was taken
             if not isinstance(action_or_state, WaitAction):
                 self.engine.player.hunker_stack = 0
@@ -123,6 +123,8 @@ class EventHandler(BaseEventHandler):
         
         self.engine.handle_enemy_turns()
         self.engine.update_fov() # Update the FOV before the players next action.        
+
+        self.end_turn()
 
         return True
 
