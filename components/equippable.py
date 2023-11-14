@@ -106,7 +106,7 @@ class RangedWeapon(Equippable):
                 for i,j in cf.disk_coords(target_xy,self.radius):
                     blast_target = self.engine.game_map.get_target_at_location(i,j)
                     if blast_target:
-                        damage = self.damage_calculation(shooter, blast_target, 0)
+                        damage, armor_reduction = self.damage_calculation(shooter, blast_target, 0)
                         if blast_target.is_visible:
                             self.engine.message_log.add_message(
                                 f"The {blast_target.name} is engulfed in a fiery explosion, taking {damage} damage!"
@@ -148,7 +148,7 @@ class RangedWeapon(Equippable):
                     self.current_clip -= 1
                     return
 
-                damage = self.damage_calculation(shooter, target,hit_margin)
+                damage, armor_reduction = self.damage_calculation(shooter, target,hit_margin)
 
                 # damage = self.attack_bonus - target.fightable.armor
                 attack_desc = f"{shooter.name.capitalize()} shoots {target.name}"
@@ -157,15 +157,13 @@ class RangedWeapon(Equippable):
                 else:
                     attack_color = color.enemy_atk
 
-                if damage > 0:
-                    if damage > target.fightable.armor:
-                        self.engine.message_log.add_message(f"{attack_desc} for {damage} hit points.",attack_color)
-                        target.fightable.hp -= damage
-                    else:
-                        self.engine.message_log.add_message(f"{attack_desc} for {damage} stun points.",attack_color)
-                        target.fightable.sp += damage
+
+                if damage > target.fightable.armor:
+                    self.engine.message_log.add_message(f"{attack_desc} for {max(0, damage-armor_reduction)} hit points.",attack_color)
+                    target.fightable.hp -= max(0, damage-armor_reduction)
                 else:
-                    self.engine.message_log.add_message(f"{attack_desc} but does no damage.", attack_color)
+                    self.engine.message_log.add_message(f"{attack_desc} for {max(0, damage-armor_reduction)} stun points.",attack_color)
+                    target.fightable.sp += max(0, damage-armor_reduction)
 
                 # Animation
                 for [i, j] in self.gamemap.get_fire_line(shooter).path:
@@ -277,20 +275,21 @@ class RangedWeapon(Equippable):
 
         return hit_margin, target
 
-    def damage_calculation(self, shooter: Actor, target: Entity, hit_margin) -> int:
+    def damage_calculation(self, shooter: Actor, target: Entity, hit_margin) -> Tuple[int,int]:
 
         damage = self.base_damage + hit_margin # TODO : bonus ??
         armor = target.fightable.armor # TODO : bonus ?
 
+        armor_reduction = 0
         for i in range(0,armor):
             if random.randint(1,3) == 3:
-               damage -= 1
-        self.engine.logger.debug(f"Armor damage reduction:{self.base_damage + hit_margin-damage} success on {armor}")
+               armor_reduction += 1
+        self.engine.logger.debug(f"Armor damage reduction:{armor_reduction} success on {armor}")
         if shooter.is_actor:
             damage += shooter.aim_stack
             self.engine.logger.debug(f"Damage aim bonus:{shooter.aim_stack}")
 
-        return max(0,damage)
+        return damage,armor_reduction
 
 
 # TODO : move to its own file
