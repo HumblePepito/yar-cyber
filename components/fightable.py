@@ -28,7 +28,7 @@ class Fightable(BaseComponent):
         self.base_defense = base_defense
         self.base_armor = base_armor
         self.base_attack = base_attack
-        self.sp = 0
+        self.sp = 0 # TODO : use _sp as float and sp as int, sp = round-(_sp)
 
     @property
     def hp(self) -> int:
