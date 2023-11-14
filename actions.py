@@ -333,6 +333,10 @@ class Reload(Action):
             raise exceptions.Impossible("No weapon to reload.")
         
         self.ranged_weapon.current_clip = self.ranged_weapon.clip_size
+        if self.entity == self.engine.player:
+            self.engine.message_log.add_message("You reload your weapon")
+        else:
+            self.engine.message_log.add_message(f"{self.entity.name.capitalize()} reloads its {self.item.name}")
 
 
 
