@@ -181,6 +181,7 @@ class MeleeAction(ActionWithDirection):
             raise exceptions.Impossible("Nothing to attack.")
 
         fire_line = self.engine.game_map.get_fire_line(self.entity)
+        fire_line.compute(shooter=self.entity, target_xy=(target.x,target.y))
         base_attack, base_defense, cover = fire_line.get_hit_stat((target.x,target.y),target)
 
         # TODO : extra modifiers (most are in get_hit_stat)
@@ -213,26 +214,15 @@ class MeleeAction(ActionWithDirection):
 
         if hit_margin >= 0:
             damage = self.entity.fightable.attack + hit_margin
-
+            armor_reduction = 0
+            for i in range(0,target.fightable.armor):
+                if random.randint(1,3) == 3:
+                    armor_reduction += 1
+            self.engine.logger.debug(f"Armor damage reduction:{armor_reduction} success on {target.fightable.armor}")
             self.engine.message_log.add_message(f"{attack_desc} for {damage} hit points.",attack_color)
             target.fightable.hp -= damage
         else:
             self.engine.message_log.add_message(f"{attack_desc} but missed.", attack_color)
-
-        
-        # damage = self.entity.fightable.attack - target.fightable.armor
-        # attack_desc = f"{self.entity.name.capitalize()} attacks {target.name}"
-        # if self.entity is self.engine.player:
-        #     attack_color = color.player_atk
-        # else:
-        #     attack_color = color.enemy_atk
-
-        # if damage > 0:
-        #     self.engine.message_log.add_message(f"{attack_desc} for {damage} hit points.",attack_color)
-        #     target.fightable.hp -= damage
-        # else:
-        #     self.engine.message_log.add_message(f"{attack_desc} but does no damage.", attack_color)
-
 
 class MovementAction(ActionWithDirection):
     
@@ -268,8 +258,6 @@ class MovementAction(ActionWithDirection):
 
 class BumpAction(ActionWithDirection):
     def perform(self) -> None:
-        #dest_x, dest_y = self.dest_xy
-
         if self.target_actor:
         #if self.engine.game_map.get_actor_at_location( dest_x, dest_y):
             return MeleeAction(self.entity, self.dx, self.dy).perform()

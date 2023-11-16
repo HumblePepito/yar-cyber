@@ -195,7 +195,12 @@ class FireLine:
             # self.parent.engine.logger.debug(f"Fire line combat_stat cache : {(self.shooter_xy+target_xy)}:{self.combat_stat[(self.shooter_xy+target_xy)]}")
             return self.combat_stat[(self.shooter_xy+target_xy)]
 
-        if self.shooter.equipment.weapon.item_type == ItemType.RANGED_WEAPON:
+        if self.shooter.equipment.weapon is None and self.shooter.distance(*self.target_xy) <= 1:
+            cover = 0
+            base_attack = self.shooter.fightable.attack
+            base_defense = target.fightable.defense
+            cache = True
+        elif self.shooter.equipment.weapon.item_type == ItemType.RANGED_WEAPON:
             cover = 0
             if target is None:
                 # shoot behind the target (wall or nothing)
@@ -228,16 +233,18 @@ class FireLine:
                         self.parent.engine.logger.debug(f"Aim bonus: lvl{self.shooter.aim_stack}:{3*self.shooter.aim_stack}")
 
                 base_defense = target.fightable.defense
-        
+            cache = True
         elif self.shooter.equipment.weapon.item_type == ItemType.MELEE_WEAPON and self.shooter.distance(*self.target_xy) <= 1:
             cover = 0
             base_attack = self.shooter.fightable.attack
             base_defense = target.fightable.defense
+            cache = True
         else:
             cover,base_attack,base_defense = 0,0,0
+            cache = False
 
             
-        if not (self.shooter is self.parent.engine.player and target is self.parent.engine.player) :
+        if not (self.shooter is self.parent.engine.player and target is self.parent.engine.player) and cache:
             self.combat_stat[self.shooter_xy+target_xy] = (base_attack, base_defense, cover)
             self.parent.engine.logger.debug(f"Combat_stat add cache : {(self.shooter_xy+target_xy)}:{self.combat_stat[(self.shooter_xy+target_xy)]}")
 
