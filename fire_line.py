@@ -195,11 +195,14 @@ class FireLine:
             # self.parent.engine.logger.debug(f"Fire line combat_stat cache : {(self.shooter_xy+target_xy)}:{self.combat_stat[(self.shooter_xy+target_xy)]}")
             return self.combat_stat[(self.shooter_xy+target_xy)]
 
-        if self.shooter.equipment.weapon is None and self.shooter.distance(*self.target_xy) <= 1:
-            cover = 0
-            base_attack = self.shooter.fightable.attack
-            base_defense = target.fightable.defense
-            cache = True
+        if self.shooter.equipment.weapon is None:
+            if self.shooter.distance(*self.target_xy) <= 1:
+                cover = 0
+                base_attack = self.shooter.fightable.attack
+                base_defense = target.fightable.defense
+                cache = True
+            else:
+                cover,base_attack,base_defense = 0,0,0
         elif self.shooter.equipment.weapon.item_type == ItemType.RANGED_WEAPON:
             cover = 0
             if target is None:
