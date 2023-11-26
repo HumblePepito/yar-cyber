@@ -661,10 +661,12 @@ class MainGameEventHandler(EventHandler):
         if key in MOVE_KEYS and not (modifier & (tcod.event.KMOD_LSHIFT | tcod.event.KMOD_RSHIFT)):
             dx, dy = MOVE_KEYS[key]
             return BumpAction(player, dx, dy)
+        elif key == tcod.event.KeySym.s and modifier & (tcod.event.KMOD_LCTRL | tcod.event.KMOD_RCTRL):
+            raise SystemExit
+        elif key == tcod.event.KeySym.s and modifier & (tcod.event.KMOD_LSHIFT | tcod.event.KMOD_RSHIFT):
+            raise SystemExit
         elif key in WAIT_KEYS:
             return WaitAction(player)
-        elif key == tcod.event.KeySym.ESCAPE:
-            raise SystemExit
         elif key == tcod.event.KeySym.d and modifier & (tcod.event.KMOD_LSHIFT | tcod.event.KMOD_RSHIFT):
             return actions.DropLastAction(player)
         elif key == tcod.event.KeySym.COMMA: #or key == tcod.event.KeySym.g:
