@@ -185,29 +185,6 @@ class MeleeAction(ActionWithDirection):
         fire_line.compute(shooter=self.entity, target_xy=(target.x,target.y))
 
         hit_margin, target = hit_calculation(shooter=self.entity, target=target)
-        # base_attack, base_defense, cover = fire_line.get_hit_stat((target.x,target.y),target)
-
-        # # TODO : extra modifiers (most are in get_hit_stat)
-        # attack = base_attack
-        # defense = base_defense
-
-        # # Roll !
-        # attack_success = 0
-        # defense_success = 0
-        # for i in range(0,attack):
-        #     if random.randint(1,3) == 3:
-        #         attack_success += 1
-        # for i in range(0,defense):
-        #     if random.randint(1,3) == 3:
-        #         defense_success += 1
-        
-        # self.engine.logger.debug(f"Att:{attack_success} success on {attack}, Def:{defense_success} on {defense}")
-
-
-        # if attack_success:
-        #     hit_margin = attack_success - defense_success
-        # else:
-        #     hit_margin = -1 # no success is always a miss
 
         attack_desc = f"{self.entity.name.capitalize()} attacks {target.name}"
         if self.entity is self.engine.player:
@@ -216,13 +193,7 @@ class MeleeAction(ActionWithDirection):
             attack_color = color.enemy_atk
 
         if hit_margin >= 0:
-            damage, armor_reduction = damage_calculation(self.entity,target,hit_margin)
-            # damage = self.entity.fightable.attack + hit_margin
-            # armor_reduction = 0
-            # for i in range(0,target.fightable.armor):
-            #     if random.randint(1,3) == 3:
-            #         armor_reduction += 1
-            # self.engine.logger.debug(f"Armor damage reduction:{armor_reduction} success on {target.fightable.armor}")
+            damage, armor_reduction = damage_calculation(self.entity.equipment.weapon,target,hit_margin)
             self.engine.message_log.add_message(f"{attack_desc} for {max(0, damage-armor_reduction)} hit points.",attack_color)
             target.fightable.hp -= max(0, damage-armor_reduction)
         else:

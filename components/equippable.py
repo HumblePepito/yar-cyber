@@ -13,6 +13,7 @@ import util.calc_functions as cf
 
 from components.base_component import BaseComponent
 from various_enum import EquipmentSlot, SizeClass
+from  util.combat import damage_calculation, hit_calculation, stray_fire
 
 from input_handlers import SingleRangedAttackHandler, AreaRangedAttackHandler, ActionOrHandler
 from exceptions import Impossible
@@ -32,6 +33,19 @@ class Equippable(BaseComponent):
         self.attack_bonus = attack_bonus
         self.armor_bonus = armor_bonus
     
+class MeleeWeapon(Equippable):
+    def __init__(
+            self,
+            equipment_type: EquipmentSlot,
+            attack_bonus: int = 0,
+            armor_bonus: int = 0,
+            base_damage: int = 1,
+    ):
+        super().__init__(equipment_type, attack_bonus, armor_bonus)
+        self.base_damage = base_damage
+
+
+
 class RangedWeapon(Equippable):
     """ Ranged Weapon, attached to an Item of type RANGED_WEAPON.
     Activation is in charge of combat calculations"""
@@ -83,14 +97,17 @@ class RangedWeapon(Equippable):
         target_xy = action.target_xy
         shooter = action.entity # player or hostile actor
         target = action.target_actor # either Actor, Item or None
+        weapon = self.parent
 
         if not self.engine.game_map.visible[target_xy]:
             raise Impossible("You cannot target an area that you cannot see.")
 
-        # if shooter.distance(*target_xy) > self.base_range:
-        #     raise Impossible("Target is too far away.")
+        fire_line = self.gamemap.get_fire_line(shooter)
 
-        hit_margin, target = self.hit_calculation(shooter, target)
+        hit_margin, target = hit_calculation(shooter, target)
+        if hit_margin < 0 or (hit_margin == 0 and not target):
+            # MISSED or shoorting deliberately behind the target
+            hit_margin, target = stray_fire(fire_line)
 
         if hit_margin is not None:
             if self.engine.renderer:
@@ -98,15 +115,13 @@ class RangedWeapon(Equippable):
                 console = self.engine.renderer.console
             else:
                 raise NotImplementedError                    
-            # console.clear()
-            # self.engine.render(self.engine.renderer)
 
             if self.radius is not None: # self radius can be 0 for a on square only effet
                 # TODO : howto join 2 generator ? TODO : use onlus cf.disk to avoid parsing the whole map
                 for i,j in cf.disk_coords(target_xy,self.radius):
                     blast_target = self.engine.game_map.get_target_at_location(i,j)
                     if blast_target:
-                        damage, armor_reduction = self.damage_calculation(shooter, blast_target, 0)
+                        damage, armor_reduction = damage_calculation(weapon, blast_target, 0)
                         if blast_target.is_visible:
                             self.engine.message_log.add_message(
                                 f"The {blast_target.name} is engulfed in a fiery explosion, taking {damage} damage!"
@@ -148,7 +163,7 @@ class RangedWeapon(Equippable):
                     self.current_clip -= 1
                     return
 
-                damage, armor_reduction = self.damage_calculation(shooter, target,hit_margin)
+                damage, armor_reduction = damage_calculation(weapon, target, hit_margin)
 
                 # damage = self.attack_bonus - target.fightable.armor
                 attack_desc = f"{shooter.name.capitalize()} shoots {target.name}"
@@ -166,7 +181,7 @@ class RangedWeapon(Equippable):
                     target.fightable.sp += max(0, damage-armor_reduction)
 
                 # Animation
-                for [i, j] in self.gamemap.get_fire_line(shooter).path:
+                for [i, j] in fire_line.path:
                     if self.engine.game_map.get_actor_at_location(i, j):
                         console.rgb["bg"][self.engine.renderer.shift(i,j)] = color.n_red
                         console.rgb["fg"][self.engine.renderer.shift(i,j)] = color.white
@@ -200,100 +215,9 @@ class RangedWeapon(Equippable):
                 self.engine.logger.info(msg=f"Target  - AC: {target.fightable.armor} SUIT:{armor_suit}") #{if isinstance(target.equipment.}.")
                 self.engine.logger.info(msg=f"HitMargin:{hit_margin} Damage:{damage}")                
 
-    def hit_calculation(self, shooter: Actor, target: Entity) -> Tuple(int, Entity):
-        """ Combat calculation
-        Returns
-            int: None = missed, >=0 = hit margin
-            entity: who is hit"""
-        fire_line = self.gamemap.get_fire_line(shooter)
-
-        if target:
-            base_attack, base_defense, cover = fire_line.get_hit_stat((target.x,target.y),target)
-    
-            # TODO : extra modifiers (most are in get_hit_stat)
-            attack = base_attack
-            defense = base_defense + cover
-
-            # Roll !
-            attack_success = 0
-            defense_success = 0
-            for i in range(0,attack):
-                if random.randint(1,3) == 3:
-                    attack_success += 1
-            for i in range(0,defense):
-                if random.randint(1,3) == 3:
-                    defense_success += 1
-            
-            self.engine.logger.debug(f"Att:{attack_success} success on {attack}, Def:{defense_success} on {defense}")
-
-
-            if attack_success:
-                hit_margin = attack_success - defense_success
-            else:
-                hit_margin = -1 # no success is always a miss
-        else:
-            hit_margin = 0
-
-
-        """ Two situations :
-        * target is missed
-            1. 50% the shot is lost
-            2. 50% the shot hit an opponent in between, chances based on size
-        * shooter shoots an empty space
-            same proportion but instead of a lost shot, the shot reach the target area
-        """
-        if hit_margin < 0 or (hit_margin == 0 and not target):
-            # MISSED or shoorting deliberately behind the target
-            if random.randint(0,1) == 0:
-                if target:
-                    # TODO : take into account global size of cover ? Excluding wall ?
-                    # TODO : 50% is more than what you will get with agile opponent. How to avoid this exploit (fire behind) ?
-                    hit_margin = None
-                    target = None
-            else:
-                # TODO : increase weight for first targets
-                if fire_line.entities:
-                    entity_weighted_chance_values = []
-                    for entity in fire_line.entities:
-                        entity_weighted_chance_values.append(entity.size.value)
-
-                    entity = random.choices(fire_line.entities,entity_weighted_chance_values)
-                    hit_margin = 0
-                    target = entity[0]
-                    self.engine.logger.debug(f"Interception:{target.name}")
-                else:
-                    if target:
-                        hit_margin = None
-                        target = None
-                    else:
-                        hit_margin = 0
-
-        if target is None and hit_margin is None:
-            # stray fire
-            # TODO : define the hit in fov or out fov
-            pass
-
         return hit_margin, target
 
-    def damage_calculation(self, shooter: Actor, target: Entity, hit_margin) -> Tuple[int,int]:
-
-        damage = self.base_damage + hit_margin # TODO : bonus ??
-        armor = target.fightable.armor # TODO : bonus ?
-
-        armor_reduction = 0
-        for i in range(0,armor):
-            if random.randint(1,3) == 3:
-               armor_reduction += 1
-        self.engine.logger.debug(f"Armor damage reduction:{armor_reduction} success on {armor}")
-        if shooter.is_actor:
-            damage += shooter.aim_stack
-            self.engine.logger.debug(f"Damage aim bonus:{shooter.aim_stack}")
-
-        return damage,armor_reduction
-
-
 # TODO : move to its own file
-# TODO : create class of weapon (with default values, including name) and call them with all parameters ??? careful about entity_factory and copies
 class Sling(RangedWeapon):
     def __init__(self):
         super().__init__(equipment_type=EquipmentSlot.WEAPON, base_damage=2, base_range=5, clip_size=1)
@@ -317,14 +241,14 @@ class GrenadeLauncher(RangedWeapon):
     def __init__(self):
         super().__init__(equipment_type=EquipmentSlot.WEAPON, base_damage=5, base_range=4, clip_size=1, radius=1)
 
-class Dagger(Equippable):
+class Dagger(MeleeWeapon):
     def __init__(self):
-        super().__init__(equipment_type=EquipmentSlot.WEAPON, attack_bonus=2) #TODO : attack_bonus vs bae damage for melee weapon
+        super().__init__(equipment_type=EquipmentSlot.WEAPON, attack_bonus=3, base_damage = 2)
 
 
-class Sword(Equippable):
+class Sword(MeleeWeapon):
     def __init__(self):
-        super().__init__(equipment_type=EquipmentSlot.WEAPON, attack_bonus=4)
+        super().__init__(equipment_type=EquipmentSlot.WEAPON, attack_bonus=1, base_damage = 5)
 
 
 class LeatherArmor(Equippable):
