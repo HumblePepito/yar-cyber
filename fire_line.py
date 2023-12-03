@@ -195,6 +195,7 @@ class FireLine:
             # self.parent.engine.logger.debug(f"Fire line combat_stat cache : {(self.shooter_xy+target_xy)}:{self.combat_stat[(self.shooter_xy+target_xy)]}")
             return self.combat_stat[(self.shooter_xy+target_xy)]
 
+        cache = False
         if self.shooter.equipment.weapon is None:
             if self.shooter.distance(*self.target_xy) <= 1:
                 cover = 0
@@ -244,7 +245,6 @@ class FireLine:
             cache = True
         else:
             cover,base_attack,base_defense = 0,0,0
-            cache = False
 
             
         if not (self.shooter is self.parent.engine.player and target is self.parent.engine.player) and cache:
