@@ -30,6 +30,11 @@ def wait() -> Iterator[Any]:
         elif key == 16: # ctrl+P
             key = 112
             mod = 192       
+        elif key == 63: # shift+,
+            mod=3
+            key=44
+
+
         event = tcod.event.KeyDown(scancode=0,sym=key,mod=mod)
         event.type = "KEYDOWN"
 

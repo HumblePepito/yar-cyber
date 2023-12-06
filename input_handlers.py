@@ -669,7 +669,9 @@ class MainGameEventHandler(EventHandler):
             return WaitAction(player)
         elif key == tcod.event.KeySym.d and modifier & (tcod.event.KMOD_LSHIFT | tcod.event.KMOD_RSHIFT):
             return actions.DropLastAction(player)
-        elif key == tcod.event.KeySym.COMMA: #or key == tcod.event.KeySym.g:
+        elif key == tcod.event.KeySym.COMMA and not (modifier & (tcod.event.KMOD_LSHIFT | tcod.event.KMOD_RSHIFT)): 
+            return actions.PickupAction(player)
+        elif key == tcod.event.KeySym.g and not (modifier & (tcod.event.KMOD_LSHIFT | tcod.event.KMOD_RSHIFT)):
             return actions.PickupAction(player)
         elif key == tcod.event.KeySym.LESS and modifier & (tcod.event.KMOD_LSHIFT | tcod.event.KMOD_RSHIFT):
             return actions.DescendAction(player)
@@ -699,6 +701,8 @@ class MainGameEventHandler(EventHandler):
         # handler
         elif key == tcod.event.KeySym.p and modifier & (tcod.event.KMOD_LCTRL | tcod.event.KMOD_RCTRL):
             return HistoryViewer(self.engine)
+        elif key == tcod.event.KeySym.COMMA and modifier & (tcod.event.KMOD_LSHIFT | tcod.event.KMOD_RSHIFT): 
+            return HelpViewer(self.engine)
         elif key == tcod.event.KeySym.d:
             return InventoryDropHandler(self.engine)
         elif key == (tcod.event.KeySym.i):
@@ -731,7 +735,7 @@ class GameOverEventHandler(EventHandler):
     def ev_quit(self, event: tcod.event.Quit) -> None:
         self.on_quit()
     
-    def ev_keydown(self, event:tcod.event.KeyDown) ->None:
+    def ev_keydown(self, event:tcod.event.KeyDown) -> None:
         if event.sym == tcod.event.KeySym.ESCAPE:
             self.on_quit()
 
@@ -787,6 +791,50 @@ class HistoryViewer(EventHandler):
             return MainGameEventHandler(self.engine)
         
         return None
+
+class HelpViewer(EventHandler):
+    """Print the history on a larger window which can be navigated."""
+
+    def __init__(self, engine: Engine):
+        super().__init__(engine)
+
+    def on_render(self, renderer: Renderer) -> None:
+        super().on_render(renderer)  # Draw the main state as the background.
+        console = renderer.console
+
+        log_console = tcod.console.Console(console.width - 4, console.height - 4)
+
+        # Draw a frame with a custom banner title.
+        log_console.draw_frame(0, 0, log_console.width, log_console.height)
+        log_console.print_box(
+            0, 0, log_console.width, 1, "┤Help├", alignment=libtcodpy.CENTER
+        )
+
+        help_str = """
+        vi keys + yubn: movements
+
+        TAB: auto-attack        ^a: disable auto-pickup
+        f: fire                 G: travel to
+        r: reload               s: wait, hunker and take aim
+        , or g : pickup         S (or ^s): save and quit
+        d: drop                 ^p : previous message
+        D: drop last item
+        x: look
+        >: descend
+        <: try to ascend
+        i: inventory
+            [a-z]: use item
+        o: auto-explore
+        """
+        
+        log_console.print(1,1,help_str)
+        log_console.blit(console, 2, 2)
+
+    def ev_keydown(self, event:tcod.event.KeyDown) -> None:
+        if event.sym == tcod.event.KeySym.ESCAPE:
+            return MainGameEventHandler(self.engine)
+
+
 
 class SeeMapHandler(AskUserEventHandler):
     pass
