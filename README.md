@@ -22,8 +22,8 @@ pip install tcod
 python -m pip install tcod should work
 
 Commands : 
-        vi keys + yubn: movements
 
+        vi keys + yubn: movements
         TAB: auto-attack        ^a: disable auto-pickup
         f: fire                 G: travel to
         r: reload               s: wait, hunker and take aim
