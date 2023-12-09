@@ -70,17 +70,17 @@ grenade_launcher = Item(
 )
 
 barrel = Feature(
-    char="0", color=color.n_gray, name="Barrel", fightable=Barrel(hp=1),ai_cls=BaseAI,)
+    char="0", color=color.n_gray, name="Barrel", fightable=Barrel(hp=1))
 
 toxic_barrel = Feature(
-    char="0", color=color.n_green, name="Toxic barrel", fightable=ToxicBarrel(hp=1),ai_cls=BaseAI)
+    char="0", color=color.n_green, name="Toxic barrel", fightable=ToxicBarrel(hp=1))
 
 toxic_smoke = Hazard(
     char="§", color=color.n_green, name="Toxic smoke", blocks_view=True, blocks_movement=False,fightable=ToxicSmoke(hp=1,base_attack=2),ai_cls=BaseAI ) # TODO : change attack by damage here and in chokeaction
 
 
 explosive_barrel = Feature(
-    char="0", color=color.n_red, name="Explosive barrel", fightable=components.fightable.ExplosiveBarrel(hp=1, radius=2),ai_cls=BaseAI)
+    char="0", color=color.n_red, name="Explosive barrel", fightable=components.fightable.ExplosiveBarrel(hp=1, radius=2))
 
 fire_cloud = Hazard(
     char="§",
