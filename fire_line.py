@@ -140,7 +140,6 @@ class FireLine:
             
             # cannot bend into a wall
             if not self.parent.tiles["walkable"][bend_x,bend_y]:
-                # print(f"bend in a wall impossible {key}")
                 continue
 
             fire_line = tcod.los.bresenham((bend_x,bend_y), self.target_xy).tolist()

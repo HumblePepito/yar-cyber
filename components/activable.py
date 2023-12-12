@@ -7,7 +7,6 @@ import color
 
 from game_map import GameMap
 from components.base_component import BaseComponent
-from exceptions import Impossible
 from render_order import RenderOrder
 from entity import Feature
 
