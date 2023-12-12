@@ -20,3 +20,19 @@ Do not use : python3 -m pip install --user tcod ; ERROR: Can not perform a '--us
 
 pip install tcod
 python -m pip install tcod should work
+
+Commands : 
+
+        vi keys + yubn: movements
+        TAB: auto-attack        ^a: disable auto-pickup
+        f: fire                 G: travel to
+        r: reload               s: wait, hunker and take aim
+        , or g : pickup         S (or ^s): save and quit
+        d: drop                 ^p : previous message
+        D: drop last item
+        x: look
+        >: descend
+        <: try to ascend
+        i: inventory
+            [a-z]: use item
+        o: auto-explore
