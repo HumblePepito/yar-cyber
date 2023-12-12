@@ -96,13 +96,12 @@ class EventHandler(BaseEventHandler):
                 self.engine.player.hunker_stack = 0
                 self.engine.player.aim_stack = 0
 
-            if not self.engine.player.is_alive:
-                # The player was killed sometime during or after the action.
-                return GameOverEventHandler(self.engine)
-            elif self.engine.player.level.requires_level_up:
+            self.engine.end_turn = True
+            # if not self.engine.player.is_alive:
+            #     # The player was killed sometime during or after the action.
+            #     return GameOverEventHandler(self.engine)
+            if self.engine.player.level.requires_level_up:
                 return LevelUpEventHandler(self.engine)
-            # elif self.engine.player.autoexplore:
-            #     return AutoExploreHandler(self.engine)
             return MainGameEventHandler(self.engine)  # Return to the main handler, waiting for a keystroke
 
         return self
@@ -119,23 +118,14 @@ class EventHandler(BaseEventHandler):
             action.perform()
         except exceptions.Impossible as exc:
             self.engine.message_log.add_message(exc.args[0], color.impossible)
-            return False # skip enemy turn on exception
-        
-        self.engine.handle_enemy_turns()
-        self.engine.update_fov() # Update the FOV before the players next action.        
-
-        self.end_turn()
+            return False # skip enemy turn on exception (self.engine.end_turn remains false)     
 
         return True
 
     def on_render(self, renderer: Renderer) -> None:
         # Main rendering call -> engine.reder will take care of all inputs in the console
         self.engine.render(renderer)
-
-    def end_turn(self) -> None:
-        """Deal recurrent action"""
-        for actor in self.engine.game_map.actors:
-            actor.fightable.sp = max(0, actor.fightable.sp-1)
+        
 
 class AskUserEventHandler(EventHandler):
     """Handles user input for actions which require special input."""
@@ -311,7 +301,7 @@ class LevelUpEventHandler(AskUserEventHandler):
             x=x,
             y=0,
             width=35,
-            height=8,
+            height=10,
             title=self.TITLE,
             clear=True,
             fg=(255, 255, 255),
@@ -347,13 +337,15 @@ class LevelUpEventHandler(AskUserEventHandler):
         key = event.sym
         index = key - tcod.event.KeySym.a
 
-        if 0 <= index <= 2:
+        if 0 <= index <= 3:
             if index == 0:
                 player.level.increase_max_hp()
             elif index == 1:
                 player.level.increase_power()
-            else:
+            elif index ==2:
                 player.level.increase_defense()
+            elif index == 3:
+                player.level.increase_armor()
         else:
             self.engine.message_log.add_message("Invalid entry.", color.invalid)
 

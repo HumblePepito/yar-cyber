@@ -4,6 +4,7 @@ from typing import Optional, TYPE_CHECKING
 
 from tcod.map import compute_fov
 import tcod.constants
+import util.event
 
 from logging import Logger
 from util.calc_functions import progress_color
@@ -18,6 +19,8 @@ import exceptions
 import lzma
 import pickle
 import color
+from input_handlers import BaseEventHandler, GameOverEventHandler, MainGameEventHandler
+from turnqueue import TurnQueue
 
 if TYPE_CHECKING:
     from entity import Actor
@@ -34,14 +37,125 @@ class Engine:
         self.renderer: Renderer = None
         self.message_log = MessageLog()
         self.logger: Logger = None
+        self.end_turn: bool = True # player has made a valid action
+        self.is_keypressed: bool = True # key stroke
+
+        self.turnqueue: TurnQueue = TurnQueue()
+        self.active_entity = None
+        self.turn_count = 0
+
+    def turn_loop(self, handler: BaseEventHandler) -> BaseEventHandler:
+        """Plays all entities and ends with player."""
+        while True:
+            if self.end_turn:
+                self.active_entity = self.turnqueue.invoke_next()
+
+            if self.active_entity is self.player:
+                if self.is_keypressed:
+                    ### LOG
+                    self.logger.debug(f"Turn queue time {self.turnqueue.current_time}")
+                    self.logger.debug(f"TQ size: {len(self.turnqueue.heap)}")
+                    msg = ""
+                    player = 0
+                    for ticket in sorted(self.turnqueue.heap):
+                        msg += f"{ticket.entity.name}:{ticket.time},{ticket.ticket_id} - "
+                        if ticket.entity is self.player:
+                            player += 1
+                    self.logger.debug(f"TQ:{msg}")
+                    # assert player == 0
+                    ### LOG
+
+                    """render all previous actions (and avoid render for non-valid event)
+                        -> has to be done before the next keystroke, thus the self.is_keypressed"""
+                    self.renderer.console.clear()
+                    handler.on_render(renderer=self.renderer)
+                    self.renderer.context.present(self.renderer.console, keep_aspect= True, integer_scaling=True)
+
+                self.end_turn = False # to prevent other event (windowfocus, keyup) to trigger the loop
+                self.is_keypressed = False
+                for event in util.event.wait():
+                    if isinstance(event, tcod.event.KeyDown):
+                        self.is_keypressed = True
+                        try:
+                            handler = handler.handle_events(event)
+                        except exceptions.AutoQuit as exc:
+                            # auto cannot start and trigers an AutoQuit
+                            self.player.ai.is_auto = False
+                            self.logger.info(f"Auto-mode {self.player.ai.is_auto}")
+                            self.message_log.add_message(exc.args[0], color.impossible)
+                            handler = MainGameEventHandler(self)
+                    elif isinstance(event, tcod.event.WindowResized):
+                        resize = True
+                
+                if self.end_turn:
+                    self.update_fov()
+                    # regular event
+                    increment = self.turnqueue.current_time//60 - self.turn_count
+                    if increment >=  1:
+                        self.clock_operation(increment)
+
+                return handler
+            else:
+                try:
+                    self.handle_enemy_turns()
+                except exceptions.Dead:
+                    print("dead")
+                    return GameOverEventHandler(self)
+
+    def turn_loop_auto(self, handler: BaseEventHandler) -> BaseEventHandler:
+        while True:
+            self.active_entity = self.turnqueue.invoke_next()
+            if self.active_entity is self.player:
+                # render all previous actions
+                self.renderer.console.clear()
+                handler.on_render(renderer=self.renderer)
+                self.renderer.context.present(self.renderer.console, keep_aspect= True, integer_scaling=True)
+
+                ##### Events that stops the auto loop #####
+                
+                # Stop auto if a key is pressed
+                # for event in util.event.get():
+                #     if isinstance(event, tcod.event.KeyDown):
+                #         self.player.ai.is_auto = False
+                #         self.logger.info(f"Auto-mode {self.player.ai.is_auto}")
+                #         handler = MainGameEventHandler(self)
+
+                try:
+                    handler.handle_action(self.player.ai)
+                except exceptions.AutoQuit as exc:
+                    self.player.ai.is_auto = False
+                    self.logger.info(f"Auto-mode {self.player.ai.is_auto}")
+                    self.message_log.add_message(exc.args[0], color.impossible)
+                    self.turnqueue.reschedule(0, self.player)
+
+                self.update_fov()
+                # regular event
+                increment = self.turnqueue.current_time//60 - self.turn_count
+                if increment >=  1:
+                    self.clock_operation(increment)
+                    
+                return handler
+            else:
+                self.handle_enemy_turns()
+
+    def clock_operation(self, increment: int) -> None:
+        """Activate regular timer"""
+        self.turn_count += increment
+        self.turnqueue.last_time = self.turnqueue.current_time 
+        for actor in self.game_map.actors:
+            actor.fightable.sp = max(0, actor.fightable.sp-increment)
 
     def handle_enemy_turns(self) -> None:
-        for entity in (set(self.game_map.actors) - {self.player}) | set(self.game_map.hazards):  # not only actors; TOODO : and features ?
-            # if entity.ai:
             try:
-                entity.ai.perform()
+                # if trouble, will no reschedule normally
+                self.active_entity.ai.perform()
             except exceptions.Impossible:
-                pass # ignore when trouble
+                # hostile loses its turn and ignore when trouble, place it at end of queue
+                self.turnqueue.reschedule(60,self.active_entity)
+            except AttributeError:
+                # no ai
+                self.logger.error(f"AttributeError in perform from {self.active_entity}.")
+                pass
 
     def update_fov(self) -> None:
         """Recompute the visible area based on the players point of view."""
@@ -57,13 +171,9 @@ class Engine:
     def render(self, renderer: Renderer ) -> None:
         # init of engine to provide access to render for auto handler
         console = renderer.console
-        if renderer and not self.renderer:
-            self.renderer = renderer
-            self.logger.info("init of engine's renderer")
 
         X_info = self.renderer.view_width+1
-        # section carte, centered on player
-        # self.game_map.render(renderer, self.view_width, self.view_height)
+        # map section, centered on player
         self.game_map.render(renderer)
 
         # section personnage
@@ -78,7 +188,7 @@ class Engine:
             render_ascii_bar(console,"+",color.b_cyan,"*",color.b_blue,X_info+len(msg)+1,1,self.player.fightable.sp-24,24,24)
 
 
-        console.print(x=X_info,y=2,string=f"Floor level:  {self.game_world.current_floor}")
+        console.print(x=X_info,y=2,string=f"Floor level:  {self.game_world.current_floor} - Turn: {self.turn_count}")
         console.print(x=X_info,y=3,string=f"Player level: {self.player.level.current_level} - XP: {self.player.level.current_xp}/{self.player.level.experience_to_next_level}")
 
         weapon = self.player.equipment.weapon
@@ -121,6 +231,3 @@ class Engine:
         save_data = lzma.compress(pickle.dumps(self))
         with open(filename, "wb") as f:
             f.write(save_data)
-
-    def print(self,*message_objet: object) -> None:
-        pass 

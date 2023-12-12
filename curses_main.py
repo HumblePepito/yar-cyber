@@ -63,11 +63,6 @@ def main(stdscr) -> None:
 
     renderer = Renderer(stdscr=stdscr, console=tcod.console.Console(screen_width, screen_height, order="F"))
 
-    renderer.console.clear()
-    handler.on_render(renderer=renderer)
-    renderer.context.present(renderer.console)
-
-    go_draw = True
     engine_ok = False
     resize = True # Double check init if xterm is already greater
 
@@ -102,6 +97,7 @@ def main(stdscr) -> None:
                     # Some initialization
                     engine_ok = True
                     engine: Engine = handler.engine
+                    engine.renderer = renderer
                     renderer.camera.x = engine.player.x
                     renderer.camera.y = engine.player.y
                     engine.logger = logger
@@ -109,49 +105,52 @@ def main(stdscr) -> None:
                 except AttributeError:
                     engine_ok = False
 
-            if go_draw:
-                renderer.console.clear()
-                handler.on_render(renderer=renderer)
-                renderer.context.present(renderer.console)
-
             try:
                 # menus before game start
-                if not engine_ok:   
-                        for event in util.event.wait():
-                            handler = handler.handle_events(event)
+                if not engine_ok:
+                    renderer.console.clear()
+                    handler.on_render(renderer=renderer)
+                    renderer.context.present(renderer.console) 
+                    for event in util.event.wait():
+                        handler = handler.handle_events(event)
                 # normal mode
                 elif engine_ok and not engine.player.ai.is_auto:   
-                        go_draw = False
-                        for event in util.event.wait():
-                            if isinstance(event, tcod.event.KeyDown):
-                                go_draw = True
-                                handler = handler.handle_events(event)
+                    if not engine.player.ai.is_auto:
+                        # normal mode
+                        handler = engine.turn_loop(handler)
+                        # go_draw = False
+                        # for event in util.event.wait():
+                        #     if isinstance(event, tcod.event.KeyDown):
+                        #         go_draw = True
+                        #         handler = handler.handle_events(event)
 
-                            # elif isinstance(event, tcod.event.WindowEvent):
-                                if event.sym.value == curses.KEY_RESIZE:
-                                    resize = True
+                        #     # elif isinstance(event, tcod.event.WindowEvent):
+                        #         if event.sym.value == curses.KEY_RESIZE:
+                        #             resize = True
 
                 # auto mode
                 else:
                     if engine.player.ai.is_auto:
-                        # Pause ai whenever a key is pressed
-                        for event in util.event.get():
-                            if isinstance(event, tcod.event.KeyDown):
-                                engine.player.ai.is_auto = False
-                                engine.logger.info(f"Auto-mode {engine.player.ai.is_auto}")
-                                handler = MainGameEventHandler(engine)
+                        # auto mode
+                        handler = engine.turn_loop_auto(handler)
+                        # # Pause ai whenever a key is pressed
+                        # for event in util.event.get():
+                        #     if isinstance(event, tcod.event.KeyDown):
+                        #         engine.player.ai.is_auto = False
+                        #         engine.logger.info(f"Auto-mode {engine.player.ai.is_auto}")
+                        #         handler = MainGameEventHandler(engine)
 
-                        ##### Events that stops the auto loop #####
-                        # Check FOV
-                        if engine.player.see_actor:
-                            engine.player.ai.is_auto = False
-                            engine.logger.info(f"Auto-mode {engine.player.ai.is_auto}")
-                            handler = MainGameEventHandler(engine)
-                        # Check if player is still alive (needless but just in case)
-                        # if not engine.player.is_alive:
-                        #     handler = GameOverEventHandler(engine)
+                        # ##### Events that stops the auto loop #####
+                        # # Check FOV
+                        # if engine.player.see_actor:
+                        #     engine.player.ai.is_auto = False
+                        #     engine.logger.info(f"Auto-mode {engine.player.ai.is_auto}")
+                        #     handler = MainGameEventHandler(engine)
+                        # # Check if player is still alive (needless but just in case)
+                        # # if not engine.player.is_alive:
+                        # #     handler = GameOverEventHandler(engine)
                         
-                        handler.handle_action(engine.player.ai)
+                        # handler.handle_action(engine.player.ai)
 
             except Exception:  # Handle exceptions in game.
                 logger.critical(traceback.format_exc())

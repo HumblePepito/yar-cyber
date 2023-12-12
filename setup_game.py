@@ -40,6 +40,14 @@ def new_game() -> Engine:
 
     engine = Engine(player=player)
 
+    # Player initialization
+    # Equip first weapon
+    player.equipment.toggle_equip(player.inventory.get_first_weapon(), add_message=False)
+    # auto_pickup lit
+    player.auto_pickup_list = [ItemType.POTION.value, ItemType.SCROLL.value]
+    # place in turn queue
+    engine.turnqueue.schedule(0, player)
+
     engine.game_world = GameWorld(
         engine = engine,
         max_rooms=max_rooms,
@@ -55,12 +63,6 @@ def new_game() -> Engine:
     engine.message_log.add_message(
         "Welcome to another sci-fi Roguelike, prepared with love, patience and python", color.welcome_text
     )
-
-    # Player initialization
-    # Equip first weapon
-    player.equipment.toggle_equip(player.inventory.get_first_weapon(), add_message=False)
-    # auto_pickup lit
-    player.auto_pickup_list = [ItemType.POTION.value, ItemType.SCROLL.value]
 
     return engine
 

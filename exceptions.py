@@ -5,5 +5,6 @@ class Impossible(Exception):
 class QuitWithoutSaving(SystemExit):
     """Can be raised to exit the game without automatically saving."""
 class AutoQuit(Exception):
-    """Exceptions raised when auto-action must stop
-    """      
+    """Exceptions raised when auto-action must stop."""      
+class Dead(Exception):
+    """Exceptions raised when player dies."""      

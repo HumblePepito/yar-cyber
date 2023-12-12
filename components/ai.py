@@ -13,6 +13,8 @@ import color
 
 from actions import Action, BumpAction, MeleeAction, MovementAction, PickupAction, Reload, WaitAction, ChokeAction, FireAction
 
+import turnqueue
+
 if TYPE_CHECKING:
     from entity import Actor
 
@@ -21,7 +23,13 @@ class BaseAI(Action):
         super().__init__(entity)
         self.is_auto = False
 
-    def perform(self) -> None:
+        # # at init, place itself into the turnqueue
+        # current_time = 0
+        # if self.engine.turnqueue.heap:
+        #     current_time = self.engine.turnqueue.heap[0].time
+        # self.engine.turnqueue.schedule(entity,current_time+1)
+
+    def act(self) -> None:
         pass
         # raise NotImplementedError()
 
@@ -58,12 +66,11 @@ class HostileEnemy(BaseAI):
         super().__init__(entity)
         self.path: List[Tuple[int,int]] = []
 
-    def perform(self) -> None:
+    def act(self) -> None:
         """Hostile Enemy base AI will :
            * wait until player comes in view
            * move toward the player and attack
         If player move out of view, Enemy base AI will move to the last known position of the player"""
-
         if self.engine.game_map.visible[self.entity.x, self.entity.y]:
             target = self.engine.player
             dx = target.x - self.entity.x
@@ -81,7 +88,7 @@ class HostileEnemy(BaseAI):
             # bare handed
             if weapon is None:
                 if distance <= 1:
-                    MeleeAction(self.entity, dx, dy).perform()
+                    MeleeAction(self.entity, dx, dy).act()
             # ranged weapon
             else:
                 if weapon.item_type == ItemType.RANGED_WEAPON:
@@ -91,21 +98,21 @@ class HostileEnemy(BaseAI):
                             self.engine.logger.debug([entity.name for entity in self.engine.game_map.player_lof.entities])
                             self.path = self.get_path_to(target.x, target.y)
                             # add a return to quit here this perform
-                            return FireAction(self.entity, target).perform()
+                            return FireAction(self.entity, target).act()
                     else:
-                        return Reload(self.entity).perform()
+                        return Reload(self.entity).act()
             # melee weapon
                 else:
                     if distance <= 1:
-                        MeleeAction(self.entity, dx, dy).perform()
+                        MeleeAction(self.entity, dx, dy).act()
 
             self.path = self.get_path_to(target.x, target.y)
 
         if self.path:
             dest_x, dest_y = self.path.pop(0)
-            return MovementAction(self.entity, dest_x - self.entity.x, dest_y - self.entity.y).perform()
+            return MovementAction(self.entity, dest_x - self.entity.x, dest_y - self.entity.y).act()
 
-        return WaitAction(self.entity).perform()
+        return WaitAction(self.entity).act()
 
 class ConfusedEnemy(BaseAI):
     """
@@ -119,7 +126,7 @@ class ConfusedEnemy(BaseAI):
         self.previous_ai = previous_ai
         self.turns_remaining = turns_remaining
         
-    def perform(self) -> None:
+    def act(self) -> None:
         # Revert the AI back to the original state if the effect has run its course.
         if self.turns_remaining <= 0:
             self.engine.message_log.add_message(
@@ -145,7 +152,7 @@ class ConfusedEnemy(BaseAI):
 
             # The actor will either try to move or attack in the chosen random direction.
             # Its possible the actor will just bump into the wall, wasting a turn.
-            return BumpAction(self.entity, direction_x, direction_y,).perform()
+            return BumpAction(self.entity, direction_x, direction_y,).act()
 
 class Vanish(BaseAI):
     """
@@ -159,18 +166,14 @@ class Vanish(BaseAI):
         self.turns_remaining = turns_remaining
         self.engine.game_map.tiles["transparent"][self.entity.x, self.entity.y] = False
         
-    def perform(self) -> None:
+    def act(self) -> None:
         # Revert the AI back to the original state if the effect has run its course.
         if self.turns_remaining <= 0:
             self.engine.game_map.tiles["transparent"][self.entity.x, self.entity.y] = True
-            self.ai = self.previous_ai
+            self.entity.ai = self.previous_ai
             self.entity.remove()
+            self.entity.fightable.hp = 0 # trigger death
         else:
-            # deals damage or apply status
-            target_actor = self.engine.game_map.get_actor_at_location(self.entity.x, self.entity.y)
-            if target_actor:
-                return ChokeAction(self.entity).perform()
-            
             if self.entity.name == "Bright Fire":
                 self.entity.color = random.choice([color.b_orange, color.b_yellow, color.n_red])
 
@@ -186,42 +189,46 @@ class Vanish(BaseAI):
             else:
                 self.entity.char = "§"
 
+            # deals damage or apply status
+            target_actor = self.engine.game_map.get_actor_at_location(self.entity.x, self.entity.y)
+            if target_actor:
+                return ChokeAction(self.entity).act()
+
 class ExploreMap(BaseAI):
 
     def __init__(self, entity: Actor, previous_ai: BaseAI):
         super().__init__(entity)
         self.path: List[Tuple[int,int]] = []
-        self.previous_ai = previous_ai
+        self.previous_ai = previous_ai # not used (player only)
         self.is_auto = True
         self.target = "explore" # TODO TODO : use a type enum to define the different target
         self.engine.logger.info(f"Auto-mode {self.is_auto}")
 
-    def perform(self) -> None:
+    def act(self) -> None:
         # time.sleep(0.03)
 
         # TODO : check visible items, then unexplored tiles, then non-visibe explored items (end level). Anticipate order of pickup.
+        if self.entity.see_actor:
+            raise exceptions.AutoQuit("You are not alone")
+        
+        if self.engine.game_map.visible_items and self.engine.player.auto_pickup:
+            # we could choose the nearest item. Order in the FOV is not really relevant
+            # TODO : track ignored items
+            for item in self.engine.game_map.visible_items:
+                if item.item_type.value in self.entity.auto_pickup_list:
+                    self.path = self.get_path_to(item.x, item.y) # TODO : make a short path, only computing FOV, not the entire map
+                    if len(self.path) == 0:
+                        return PickupAction(self.entity).act()
+
+        if len(self.path) == 0:
+            self.path = self.path_to_nearest_unexplored_tiles()
+
+        dest_x, dest_y = self.path.pop(0)
         try:
-            if self.entity.see_actor:
-                raise exceptions.AutoQuit("You are not alone")
-            
-            if self.engine.game_map.visible_items and self.engine.player.auto_pickup:
-                # we could choose the nearest item. Order in the FOV is not really relevant
-                # TODO : track ignored items
-                for item in self.engine.game_map.visible_items:
-                    if item.item_type.value in self.entity.auto_pickup_list:
-                        self.path = self.get_path_to(item.x, item.y) # TODO : make a short path, only computing FOV, not the entire map
-                        if len(self.path) == 0:
-                            return PickupAction(self.entity).perform()
+            MovementAction(self.entity, dest_x - self.entity.x, dest_y - self.entity.y).act()
+        except exceptions.Impossible as exc:
+            raise exceptions.AutoQuit(exc.args[0])
 
-            if len(self.path) == 0:
-                self.path = self.path_to_nearest_unexplored_tiles()
-
-            dest_x, dest_y = self.path.pop(0)
-            return MovementAction(self.entity, dest_x - self.entity.x, dest_y - self.entity.y).perform()
-        except exceptions.AutoQuit as exc:
-            self.is_auto = False
-            self.engine.logger.info(f"Auto-mode {self.is_auto}")
-            raise exceptions.Impossible(exc.args[0])
 
     def path_to_nearest_unexplored_tiles(self) -> List[Tuple[int, int]]:
         """start from player position and circles until a unexplored and walkable and reachable tiles is found"""
@@ -272,20 +279,22 @@ class MoveTo(BaseAI):
     def __init__(self, entity: Actor, previous_ai: BaseAI, dest_xy: Tuple(int, int)):
         super().__init__(entity)
         self.path: List[Tuple[int,int]] = []
-        self.previous_ai = previous_ai
+        self.previous_ai = previous_ai # not used (player only)
         self.is_auto = True
         self.target = "destination" # TODO : use a type enum to define the different target
         self.dest_xy = dest_xy
         self.engine.logger.info(f"Auto-mode {self.is_auto}")
 
-    def perform(self) -> None:
+    def act(self) -> None:
         # time.sleep(0.5)
 
-        player = self.entity
-
+        if self.entity.see_actor:
+            raise exceptions.AutoQuit("You are not alone")
         if not self.engine.game_map.explored[self.dest_xy]:
-            self.is_auto = False
-            raise exceptions.Impossible("You don't know how to get there.")
+            # self.is_auto = False
+            raise exceptions.AutoQuit("You don't know how to get there.")
+
+        player = self.entity
 
         if len(self.path) == 0:
             walkable = np.array(self.entity.gamemap.tiles["walkable"], np.int8)
@@ -297,9 +306,9 @@ class MoveTo(BaseAI):
         if len(self.path) == 0:
             self.is_auto = False
             self.engine.logger.info(f"Auto-mode {self.is_auto}")
-            raise exceptions.Impossible("Here you are.")
+            raise exceptions.AutoQuit("Here you are.")
 
         dest_x, dest_y = self.path.pop(0)
-        return MovementAction(self.entity, dest_x - self.entity.x, dest_y - self.entity.y).perform()
+        return MovementAction(self.entity, dest_x - self.entity.x, dest_y - self.entity.y).act()
 
 

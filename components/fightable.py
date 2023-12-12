@@ -10,6 +10,7 @@ import util.calc_functions as cf
 import color
 import entity_factories
 import components.ai
+from exceptions import Dead
 
 from components.base_component import BaseComponent
 from components.equippable import RangedWeapon
@@ -125,12 +126,16 @@ class Fighter(Fightable):
                 msg = f"The {self.parent.name} drops its inventory."
             self.engine.message_log.add_message(msg)
 
+        if self.engine.player is self.parent:
+            raise Dead
+
         self.parent.ai = components.ai.BaseAI(self.parent)
         self.engine.player.level.add_xp(self.parent.level.xp_given)
         self.parent.char="†"
         self.parent.char="%"
         self.parent.blocks_movement = False
         self.parent.name = f"remains of {self.parent.name}"
+        self.engine.turnqueue.unschedule(self.parent, self.engine.active_entity)
 
 class Barrel(Fightable):
     parent: Feature
@@ -176,17 +181,6 @@ class ToxicBarrel(Fightable):
                 smoke = entity.spawn(self.gamemap,x,y)
                 smoke.ai = components.ai.Vanish(entity=smoke, previous_ai=smoke.ai, turns_remaining=4+random.randint(-1,1),)
 
-
-class ToxicSmoke(Fightable):
-    parent: Feature
-
-    def take_damage(self, amount:int) -> None:
-        return
-
-    @property
-    def attack_bonus(self) -> int:
-        return 0
-
 class ExplosiveBarrel(Fightable):
     parent: Feature
 
@@ -216,6 +210,31 @@ class ExplosiveBarrel(Fightable):
                 smoke = entity.spawn(self.gamemap,x,y)
                 smoke.ai = components.ai.Vanish(entity=smoke, previous_ai=smoke.ai, turns_remaining=10+random.randint(-2,2),)
 
+class Smoke(Fightable): # does it need to be a Fightable? I don't think so
+    parent: Feature
+
+    def take_damage(self, amount:int) -> None:
+        return
+
+    @property
+    def attack_bonus(self) -> int:
+        return 0
+
+    def die(self) -> None:
+        self.engine.turnqueue.unschedule(self.parent, self.engine.active_entity)
+
+class ToxicSmoke(Fightable):
+    parent: Feature
+
+    def take_damage(self, amount:int) -> None:
+        return
+
+    @property
+    def attack_bonus(self) -> int:
+        return 0
+
+    def die(self) -> None:
+        self.engine.turnqueue.unschedule(self.parent, self.engine.active_entity)
 
 class FireCloud(Fightable):
     parent: Feature
@@ -226,4 +245,8 @@ class FireCloud(Fightable):
     @property
     def attack_bonus(self) -> int:
         return 0
+    
+    def die(self) -> None:
+        self.engine.turnqueue.unschedule(self.parent, self.engine.active_entity)
+
 

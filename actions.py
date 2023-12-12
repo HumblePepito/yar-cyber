@@ -30,19 +30,34 @@ class Action:
         return self.entity.gamemap.engine
 
     def perform(self) -> None:
+        self.act()
+        if self.entity.is_alive: # TODO : check if only for the player
+            self.reschedule() # to be done after to avoid duplication when ImpossibleException
+        self.end_action()
+
+    def reschedule(self) -> None:
+        # by default, every action take 60
+        self.engine.turnqueue.reschedule(60,self.entity)
+
+    def act(self) -> None:
         """Perform this action with the objects needed to determine its scope.
-        `self.engine` is the scope this action is being performed in.
-        `self.entity` is the object performing the action.
+        * `self.engine` is the scope this action is being performed in.
+        * `self.entity` is the object performing the action.
         This method must be overridden by Action subclasses.
         """
         raise NotImplementedError()
+
+    def end_action(self) -> None:
+        """End the turn of current active entity.
+        """
+        pass
 
 class PickupAction(Action):
     def __init__(self, entity:Actor, item: Optional[Item] = None) -> None:
         super().__init__(entity)
         self.item = item
     
-    def perform(self) -> None:
+    def act(self) -> None:
         if self.item:
             item = self.item    
         else:
@@ -57,7 +72,10 @@ class PickupAction(Action):
                 #self.engine.game_map.entities.remove(item)
                 item.remove()
             else:
-                raise exceptions.Impossible("Your inventory is full.")
+                if self.entity.ai.is_auto:
+                    raise exceptions.AutoQuit("Your inventory is full.")
+                else:
+                    raise exceptions.Impossible("Your inventory is full.")
         else:
             raise exceptions.Impossible("No object to pickup here.")
 
@@ -75,7 +93,7 @@ class ItemAction(Action):
         target = self.engine.game_map.get_target_at_location(*self.target_xy)
         return target        
 
-    def perform(self) -> None:
+    def act(self) -> None:
         """Invoke the items ability, this action will be given to provide context."""
         # TODO : warning, activate is not for all equippable
         if self.item.equippable:
@@ -84,14 +102,14 @@ class ItemAction(Action):
             self.item.consumable.activate(self)
 
 class DropItem(ItemAction):
-    def perform(self) -> None:
+    def act(self) -> None:
         if self.entity.equipment.item_is_equipped(self.item):
             self.entity.equipment.toggle_equip(self.item)
         self.entity.inventory.drop(self.item)
 
 
 class DropLastAction(Action):    
-    def perform(self) -> None:
+    def act(self) -> None:
         # unequip in inventory, not here      
         self.entity.inventory.droplast()
 
@@ -101,20 +119,25 @@ class EquipAction(Action):
 
         self.item = item
 
-    def perform(self) -> None:
+    def act(self) -> None:
         self.entity.equipment.toggle_equip(self.item)
 
 class WaitAction(Action):
-    """ Wait also improve efficiency of cover and add aim bonus"""
-    def perform(self) -> None:
-        self.entity.hunker_stack = min(self.entity.hunker_stack+1, 2)
-        self.entity.aim_stack = min(self.entity.aim_stack+1, 3)
+    """ Wait also improve efficiency of cover and add aim bonus when target in sight"""
+    def act(self) -> None:
+        if self.entity.see_actor:
+            self.entity.hunker_stack = min(self.entity.hunker_stack+1, 2)
+            self.entity.aim_stack = min(self.entity.aim_stack+1, 3)
+        else:
+            self.entity.hunker_stack = 0
+            self.entity.aim_stack = 0
+
 
 class DescendAction(Action):
     def __init__(self, entity:Actor) -> None:
         super().__init__(entity)
     
-    def perform(self) -> None:
+    def act(self) -> None:
         """
         Take the stairs, if any exist at the entity's location.
         """
@@ -132,7 +155,7 @@ class DescendAction(Action):
 
 class AscendAction(Action):
     
-    def perform(self) -> None:
+    def act(self) -> None:
         """
         Escape upstairs, if any exist at the entity's location.
         """
@@ -168,13 +191,13 @@ class ActionWithDirection(Action):
         """Return the actor at this actions destination."""
         return self.engine.game_map.get_actor_at_location(*self.dest_xy)
 
-    def perform(self) -> None:
+    def act(self) -> None:
         raise NotImplementedError()
 
 
 class MeleeAction(ActionWithDirection):
     
-    def perform(self) -> None:
+    def act(self) -> None:
 
         target = self.target_actor
         
@@ -201,7 +224,7 @@ class MeleeAction(ActionWithDirection):
 
 class MovementAction(ActionWithDirection):
     
-    def perform(self) -> None:
+    def act(self) -> None:
         dest_x, dest_y = self.dest_xy
 
         if not self.engine.game_map.in_bounds(dest_x, dest_y):
@@ -219,12 +242,12 @@ class MovementAction(ActionWithDirection):
             # while ( self.engine.game_map.get_item_at_location(self.entity.x, self.entity.y)
             #         and self.entity.auto_pickup
             #         and self.engine.game_map.get_item_at_location(self.entity.x, self.entity.y).item_type.value in self.entity.auto_pickup_list):
-            #     PickupAction(self.entity).perform()
+            #     PickupAction(self.entity).act()
             items = set(self.engine.game_map.get_items_at_location(self.entity.x, self.entity.y))
             msg = ""
             for item in items:
                 if self.entity.auto_pickup_list and item.item_type.value in self.entity.auto_pickup_list:
-                    PickupAction(entity=self.entity, item=item).perform()
+                    PickupAction(entity=self.entity, item=item).act()
                 else:
                     msg += item.name + ", "
             
@@ -232,12 +255,12 @@ class MovementAction(ActionWithDirection):
                 self.engine.message_log.add_message(f"You see: {msg[:-2]}")
 
 class BumpAction(ActionWithDirection):
-    def perform(self) -> None:
+    def act(self) -> None:
         if self.target_actor:
         #if self.engine.game_map.get_actor_at_location( dest_x, dest_y):
-            return MeleeAction(self.entity, self.dx, self.dy).perform()
+            return MeleeAction(self.entity, self.dx, self.dy).act()
         else:
-            return MovementAction(self.entity, self.dx, self.dy).perform()
+            return MovementAction(self.entity, self.dx, self.dy).act()
 
 class FireAction(Action):
     """ The Fire action fires the equipped ranged weapon on the nearest target unless target is provided
@@ -256,7 +279,7 @@ class FireAction(Action):
         except AttributeError:
             self.ranged_weapon = None
 
-    def perform(self) -> None:
+    def act(self) -> None:
         if not self.ranged_weapon:
             raise exceptions.Impossible("You must have a working ranged weapon.")
         if self.ranged_weapon.current_clip == 0:
@@ -291,7 +314,7 @@ class Reload(Action):
         except AttributeError:
             self.ranged_weapon = None
 
-    def perform(self) -> None:
+    def act(self) -> None:
         if not self.ranged_weapon or self.ranged_weapon.current_clip == self.ranged_weapon.clip_size:
             raise exceptions.Impossible("No weapon to reload.")
         
@@ -301,10 +324,13 @@ class Reload(Action):
         else:
             self.engine.message_log.add_message(f"{self.entity.name.capitalize()} reloads its {self.item.name}")
 
+    def reschedule(self) -> None:
+        # by default, every action take 60
+        self.engine.turnqueue.reschedule(33,self.entity)
 
 
 class AutoAttack(FireAction):
-    def perform(self) -> None:
+    def act(self) -> None:
         if not self.entity.see_actor:
             raise exceptions.Impossible("No enemy in sight.")
 
@@ -327,20 +353,20 @@ class AutoAttack(FireAction):
             # TODO : block in certain situation (through wall)
             x, y = path[1]
 
-            return BumpAction(entity=self.entity, dx=x-self.entity.x, dy=y-self.entity.y).perform()
+            return BumpAction(entity=self.entity, dx=x-self.entity.x, dy=y-self.entity.y).act()
         # Ranged Weapon
         elif self.item.item_type == ItemType.RANGED_WEAPON:
             if self.entity.distance(target.x, target.y) > self.ranged_weapon.base_range:
                 path = tcod.los.bresenham((self.entity.x, self.entity.y),(target.x, target.y)).tolist()
                 # TODO : block in certain situation (through wall)
                 x, y = path[1]
-                return MovementAction(entity=self.entity, dx=x-self.entity.x, dy=y-self.entity.y).perform()
+                return MovementAction(entity=self.entity, dx=x-self.entity.x, dy=y-self.entity.y).act()
             else:
                 self.engine.game_map.player_lof.compute(shooter=self.entity, target_xy=(target.x,target.y))
-                return FireAction(self.entity, target).perform()
+                return FireAction(self.entity, target).act()
                 
 class SwitchAutoPickup(Action):
-    def perform(self) -> None:
+    def act(self) -> None:
         self.entity.auto_pickup = not self.entity.auto_pickup
         self.engine.message_log.add_message(f"Autopickup set to {self.entity.auto_pickup}.")
 
@@ -351,7 +377,7 @@ class ChokeAction(Action):
         """Return the actor at this actions destination."""
         return self.engine.game_map.get_actor_at_location(self.entity.x,self.entity.y)
 
-    def perform(self) -> None:
+    def act(self) -> None:
 
         target = self.target_actor
 

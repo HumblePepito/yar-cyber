@@ -15,7 +15,7 @@ import input_handlers
 import color
 import setup_game
 from engine import Engine
-from input_handlers import MainGameEventHandler
+from input_handlers import GameOverEventHandler
 
 from renderer import Renderer
 
@@ -44,8 +44,9 @@ def main() -> None:
     tileset = tcod.tileset.load_tilesheet(
         # "./png/mono6x12.png", 32,8, tcod.tileset.CHARMAP_TCOD
         # "./png/mono12x24.png", 32,8, tcod.tileset.CHARMAP_TCOD
-        # "./png/Cheepicus_16x16.png", 16, 16, CHARMAP_CP437_pepito
-        "./png/Bisasam_20x20_ascii.png", 16, 16, CHARMAP_CP437_pepito
+        "./png/Cheepicus_14x14.png", 16, 16, CHARMAP_CP437_pepito
+        # "./png/Bisasam_20x20_ascii.png", 16, 16, CHARMAP_CP437_pepito
+        # "./png/Bisasam_16x16.png", 16, 16, CHARMAP_CP437_pepito
     #     "./png/chozo32.png", 40, 27, tcod.tileset.CHARMAP_TCOD
     
     )
@@ -67,8 +68,11 @@ def main() -> None:
     # Use of renderer instead of console in order to add both Console & Context to the engine and use it in auto-Handlers
     renderer = Renderer(context=context, console=context.new_console(min_columns=screen_width, min_rows=screen_height, order="F"))
 
+    # renderer.console.clear()
+    # handler.on_render(renderer=renderer)
+    # renderer.context.present(renderer.console)
+
     # Boucle principale !!
-    go_draw = True
     engine_ok = False
     resize = False
     try:
@@ -98,55 +102,31 @@ def main() -> None:
                     # Some initialization
                     engine_ok = True
                     engine: Engine = handler.engine
+                    engine.renderer = renderer
                     renderer.camera.x = engine.player.x
                     renderer.camera.y = engine.player.y
                     engine.logger = logger
-                    logger.info("Engine initialized")
+                    engine.logger.info("Engine initialized")
                 except AttributeError:
                     engine_ok = False
-
-            if go_draw:
-                renderer.console.clear()
-                handler.on_render(renderer=renderer)
-                renderer.context.present(renderer.console, keep_aspect= True, integer_scaling=True)
-
+            
             try:
                 # menus before game start
-                if not engine_ok:   # menus before game start
-                        for event in util.event.wait():
-                            #context.convert_event(event) # for mouse
-                            handler = handler.handle_events(event)
-                # normal mode
-                elif engine_ok and not engine.player.ai.is_auto:
-                        go_draw = False
-                        for event in util.event.wait():
-                            if isinstance(event, tcod.event.KeyDown):
-                                go_draw = True
-                                handler = handler.handle_events(event)
-                            elif isinstance(event, tcod.event.WindowResized):
-                                resize = True
-                # auto mode
-                else:
-                    if engine.player.ai.is_auto:
-                        for event in util.event.get():
-                            # Stop auto if a key is pressed
-                            if isinstance(event, tcod.event.KeyDown):
-                                engine.player.ai.is_auto = False
-                                engine.logger.info(f"Auto-mode {engine.player.ai.is_auto}")
-                                handler = MainGameEventHandler(engine)
-
-                        ##### Events that stops the auto loop #####
-                        # Check FOV
-                        if engine.player.see_actor:
-                            engine.player.ai.is_auto = False
-                            engine.logger.info(f"Auto-mode {engine.player.ai.is_auto}")
-                            handler = MainGameEventHandler(engine)
-                        # Check if player is still alive (needless but just in case)
-                        # if not engine.player.is_alive:
-                        #     handler = GameOverEventHandler(engine)
-                        
-                        handler.handle_action(engine.player.ai)
-
+                if not engine_ok or isinstance(handler,GameOverEventHandler):   # menus before or after game
+                    renderer.console.clear()
+                    handler.on_render(renderer=renderer)
+                    renderer.context.present(renderer.console, keep_aspect= True, integer_scaling=True)
+                    for event in util.event.wait():
+                        #context.convert_event(event) # for mouse
+                        handler = handler.handle_events(event)
+                elif engine_ok:
+                    if not engine.player.ai.is_auto:
+                        # normal mode
+                        handler = engine.turn_loop(handler)
+                    else:
+                        # auto mode
+                        handler = engine.turn_loop_auto(handler)
+                    
             except Exception:  # Handle exceptions in game.
                 logger.critical(traceback.format_exc())
                 handler.engine.message_log.add_message("Exception raised at Main level. Check logfile.", color.error) # nuance avec isinstance    

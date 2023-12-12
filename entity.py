@@ -74,6 +74,14 @@ class Entity:
         clone.y = y
         clone.parent = gamemap
         gamemap.entities.add(clone)
+
+        # at init, place itself into the turnqueue
+        if isinstance(self, Actor) or isinstance(self,Hazard):
+            # current_time = 0
+            # if gamemap.engine.turnqueue.heap:
+            #     current_time = gamemap.engine.turnqueue.heap[0].time
+            gamemap.engine.turnqueue.schedule(0, clone)  
+
         return clone
 
     def place(self, x: int, y: int, gamemap: Optional[GameMap] = None) -> None:
@@ -102,7 +110,8 @@ class Entity:
     def remove (self) -> None:
         # je suppose que Gamemap est initialisé... cf les 3 lignes en commentaires hasattr...
         self.gamemap.entities.remove(self)
-    
+
+
     def get_nearest_actor(self) -> Optional[Actor]:
         min_dist: float = 10
         dist: float = 0
@@ -153,14 +162,12 @@ class Actor(Entity):
         self.inventory.parent = self
         self.level = level
         self.level.parent = self
-        self.bend = ""
 
+        self.bend = ""
         self.auto_pickup = True
         self.auto_pickup_list = []
         self.hunker_stack = 0
         self.aim_stack = 0
-        
-
 
     @property
     def is_alive(self) -> bool:
@@ -214,7 +221,6 @@ class Feature(Entity):
         color: Tuple[int, int, int] = (255, 255, 255),
         name: str = "<Unnamed>",
         render_order=RenderOrder.ITEM,
-        ai_cls: Type[BaseAI],
         activable: Optional[Activable] = None, # doors, buttons, terminals, comlink, lift, etc
         fightable: Optional[Fightable] = Entity(),
         blocks_movement=True,
@@ -233,7 +239,6 @@ class Feature(Entity):
             render_order=render_order,
             size=size,
         )
-        self.ai: Optional[BaseAI] = ai_cls(self)
         self.activable = activable
         self.fightable = fightable
         self.fightable.parent = self
@@ -269,3 +274,8 @@ class Hazard(Entity):
         self.fightable = fightable
         self.fightable.parent = self
         self.blocks_view = blocks_view
+
+    @property
+    def is_alive(self) -> bool:
+        """Returns True as long as this actor can perform actions."""
+        return bool(self.fightable.hp)
