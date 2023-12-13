@@ -2,8 +2,10 @@
 import traceback
 import logging
 import os
+import argparse
 
 import tcod
+import curses
 
 import util.var_global
 import util.event
@@ -18,6 +20,7 @@ from engine import Engine
 from input_handlers import GameOverEventHandler
 
 from renderer import Renderer
+import curses_renderer
 
 def save_game(handler: input_handlers.BaseEventHandler, filename: str) -> None:
     """If the current event handler has an active Engine then save it."""
@@ -25,13 +28,12 @@ def save_game(handler: input_handlers.BaseEventHandler, filename: str) -> None:
         handler.engine.save_as(filename)
         print("Game saved.")
 
-def main() -> None:
+def set_shorter_esc_delay_in_os():
+    # TODO : change in python 3.9 to curses.set_escdelay(25)
+    # https://stackoverflow.com/questions/27372068/why-does-the-escape-key-have-a-delay-in-python-curses
+    os.environ.setdefault('ESCDELAY', '5')
 
-    FLAGS = tcod.context.SDL_WINDOW_RESIZABLE
-    # size of console
-    screen_width = 80
-    screen_height = 24 #50
-#https://python-tcod.readthedocs.io/en/latest/tcod/getting-started.html#dynamically-sized-console
+def main(stdscr) -> None:
 
     # log tool
     Log_Format = "%(levelname)s %(asctime)s - %(message)s"
@@ -40,33 +42,57 @@ def main() -> None:
     )
     logger = logging.getLogger()
     util.var_global.logger = logger
-
-    tileset = tcod.tileset.load_tilesheet(
-        # "./png/mono6x12.png", 32,8, tcod.tileset.CHARMAP_TCOD
-        # "./png/mono12x24.png", 32,8, tcod.tileset.CHARMAP_TCOD
-        "./png/Cheepicus_14x14.png", 16, 16, CHARMAP_CP437_pepito
-        # "./png/Bisasam_20x20_ascii.png", 16, 16, CHARMAP_CP437_pepito
-        # "./png/Bisasam_16x16.png", 16, 16, CHARMAP_CP437_pepito
-    #     "./png/chozo32.png", 40, 27, tcod.tileset.CHARMAP_TCOD
-    
-    )
+    logger.info(f"Commandline parameters: {config}")
 
     handler: input_handlers.BaseEventHandler = setup_game.MainMenu() # gets back with MainGameEventHandler
 
-    context = tcod.context.new(
-        x=0,
-        y=0,
-        columns=screen_width,
-        rows=screen_height,
-        # width=1600,
-        # height=480,
-        tileset=tileset,
-        title="Sci-fi Roguelike Tutorial",
-        vsync=True,
-        sdl_window_flags=FLAGS
-    )
-    # Use of renderer instead of console in order to add both Console & Context to the engine and use it in auto-Handlers
-    renderer = Renderer(context=context, console=context.new_console(min_columns=screen_width, min_rows=screen_height, order="F"))
+    if config['curses']:
+        # global xterm
+        util.var_global.xterm = stdscr
+        screen_width, screen_height = curses.COLS-1, curses.LINES
+        curses.start_color()
+        curses.use_default_colors()
+        for i in range(0, 16):
+            curses.init_pair(i + 1, i, -1)
+        
+        # Same loop in color
+        i=0
+        for bg in range(0,16):
+            for fg in range(0,16):
+                i+=1
+                curses.init_pair(i,fg,bg)
+
+        renderer = curses_renderer.Renderer(stdscr=stdscr, console=tcod.console.Console(screen_width, screen_height, order="F"))
+    else:
+        FLAGS = tcod.context.SDL_WINDOW_RESIZABLE
+        # size of console
+        screen_width = 80
+        screen_height = 24
+        #https://python-tcod.readthedocs.io/en/latest/tcod/getting-started.html#dynamically-sized-console
+        if png:
+            tileset_filename=png
+        else:
+            tileset_filename="./png/Cheepicus_14x14.png"
+            # tileset_filename="./png/Bisasam_20x20_ascii.png"
+
+        tileset = tcod.tileset.load_tilesheet(
+            tileset_filename, 16, 16, CHARMAP_CP437_pepito
+        )
+
+        context = tcod.context.new(
+            x=0,
+            y=0,
+            columns=screen_width,
+            rows=screen_height,
+            # width=1600,
+            # height=480,
+            tileset=tileset,
+            title="Sci-fi Roguelike Tutorial",
+            vsync=True,
+            sdl_window_flags=FLAGS
+        )
+        # Use of renderer instead of console in order to add both Console & Context to the engine and use it in auto-Handlers
+        renderer = Renderer(context=context, console=context.new_console(min_columns=screen_width, min_rows=screen_height, order="F"))
 
     # renderer.console.clear()
     # handler.on_render(renderer=renderer)
@@ -139,5 +165,23 @@ def main() -> None:
         save_game(handler, "savegame.sav")
         raise
 
+
+
+parser = argparse.ArgumentParser(description='Dive into cyber alternative life.',epilog='Have fun and stay alive...')
+parser.add_argument('-c', '--curses', action='store_true', help='use curses rendering in terminal')
+parser.add_argument('-s', '--seed', type=int, help='fixed seed for static generation')
+parser.add_argument('-t', '--tiles', dest='png' , type=str, help="path to a specific PNG tiles file (charmap CP437)")
+parser.add_argument('-w', '--wizard', action='store_true', help='start in wizard mode')
+args = parser.parse_args()
+config = vars(args)
+
 if __name__ == "__main__":
-    main()
+    if config['seed'] or config['wizard']:
+        print("Not yet implemented")
+
+    if config['curses']:
+        set_shorter_esc_delay_in_os()
+        curses.wrapper(main)
+    else:
+        png = config['png']
+        main('dummy')
