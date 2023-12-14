@@ -18,16 +18,19 @@ wall = Entity(
 healingPotion = Item(
     char="!", color=color.n_purple, name="Healing potion", item_type=ItemType.POTION, consumable=consumable.HealingConsumable(amount=5),
 )
+speedDrug = Item(
+    char="£", color=color.b_cyan, name="Speed drug", item_type=ItemType.DRUG, consumable=consumable.SpeedConsumable(duration=5,speed=200),
+)
 lightningScroll = Item(
     char="?", color=(127, 127, 255), name="Scroll of lightning", item_type=ItemType.SCROLL, consumable=consumable.LightningDamageConsumable(damage=18),
 )
 confusionScroll = Item(
     char="?", color=(207, 63, 255), name="Confusion Scroll", item_type=ItemType.SCROLL, consumable=consumable.ConfusionConsumable(number_of_turns=10),
 )
-
 fireballScroll = Item(
     char="?", color=(255, 63, 0), name="Fireball Scroll", item_type=ItemType.SCROLL, consumable=consumable.FireballConsumable(radius=1,damage=18),
 )
+
 
 dagger = Item(
     char=")", color=(0, 191, 255), name="Dagger", equippable=equippable.Dagger(), item_type= ItemType.MELEE_WEAPON,
@@ -75,13 +78,11 @@ barrel = Feature(
 toxic_barrel = Feature(
     char="0", color=color.n_green, name="Toxic barrel", fightable=ToxicBarrel(hp=1))
 
-toxic_smoke = Hazard(
-    char="§", color=color.n_green, name="Toxic smoke", blocks_view=True, blocks_movement=False,fightable=ToxicSmoke(hp=1,base_attack=2),ai_cls=BaseAI ) # TODO : change attack by damage here and in chokeaction
-
-
 explosive_barrel = Feature(
     char="0", color=color.n_red, name="Explosive barrel", fightable=components.fightable.ExplosiveBarrel(hp=1, radius=2))
 
+toxic_smoke = Hazard(
+    char="§", color=color.n_green, name="Toxic smoke", blocks_view=True, blocks_movement=False,fightable=ToxicSmoke(hp=1,base_attack=2),ai_cls=BaseAI ) # TODO : change attack by damage here and in chokeaction
 fire_cloud = Hazard(
     char="§",
     color=color.b_orange,

@@ -168,6 +168,7 @@ class Actor(Entity):
         self.auto_pickup_list = []
         self.hunker_stack = 0
         self.aim_stack = 0
+        self.effects = {}
 
     @property
     def is_alive(self) -> bool:

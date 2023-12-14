@@ -144,6 +144,12 @@ class Engine:
         self.turnqueue.last_time = self.turnqueue.current_time 
         for actor in self.game_map.actors:
             actor.fightable.sp = max(0, actor.fightable.sp-increment)
+        
+            if actor.effects:
+                for key in list(actor.effects):
+                    actor.effects[key]['duration'] -= 1
+                    if actor.effects[key]['duration'] == 0:
+                        del actor.effects[key]
 
     def handle_enemy_turns(self) -> None:
             try:
@@ -152,9 +158,9 @@ class Engine:
             except exceptions.Impossible:
                 # hostile loses its turn and ignore when trouble, place it at end of queue
                 self.turnqueue.reschedule(60,self.active_entity)
-            except AttributeError:
+            except AttributeError as exc:
                 # no ai
-                self.logger.error(f"AttributeError in perform from {self.active_entity}.")
+                self.logger.error(f"No ai : AttributeError in perform from {self.active_entity}. {exc.args[0]}")
                 pass
 
     def update_fov(self) -> None:
@@ -188,8 +194,7 @@ class Engine:
             render_ascii_bar(console,"+",color.b_cyan,"*",color.b_blue,X_info+len(msg)+1,1,self.player.fightable.sp-24,24,24)
 
 
-        console.print(x=X_info,y=2,string=f"Floor level:  {self.game_world.current_floor} - Turn: {self.turn_count}")
-        console.print(x=X_info,y=3,string=f"Player level: {self.player.level.current_level} - XP: {self.player.level.current_xp}/{self.player.level.experience_to_next_level}")
+        console.print(x=X_info,y=2,string=f"Player lvl: {self.player.level.current_level} - Floor lvl:  {self.game_world.current_floor} - Turn: {self.turn_count}")
 
         weapon = self.player.equipment.weapon
         clip_msg = ""
@@ -201,12 +206,23 @@ class Engine:
         elif weapon.item_type == ItemType.MELEE_WEAPON:
             msg = f"Weapon: {weapon.name}"
         
-        console.print(x=X_info,y=4,string=msg)
+        console.print(x=X_info,y=3,string=msg)
         if clip_msg:
-            console.print(x=X_info+len(msg),y=4,string=clip_msg,fg=progress_color(weapon.equippable.current_clip,weapon.equippable.clip_size))
+            console.print(x=X_info+len(msg),y=3,string=clip_msg,fg=progress_color(weapon.equippable.current_clip,weapon.equippable.clip_size))
         if self.player.aim_stack:
-            console.print(x=X_info+len(msg)+len(clip_msg),y=4,string=f" Aim {self.player.aim_stack}")
+            console.print(x=X_info+len(msg)+len(clip_msg),y=3,string=f" Aim {self.player.aim_stack}")
 
+        if self.player.effects:
+            status=""
+            l=0
+            for key in list(self.player.effects):
+                status += f"{self.player.effects[key]['name']}:{self.player.effects[key]['duration']} " 
+                if self.player.effects[key]['duration'] == 1:
+                    console.print(x=X_info,y=4+l,string=status,fg=color.n_gray)
+                else:
+                    console.print(x=X_info,y=4+l,string=status)
+                l=len(status)
+                
         # section message
         self.message_log.render(console,X_info,18,X_info,6)
 

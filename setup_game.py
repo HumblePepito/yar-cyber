@@ -44,7 +44,7 @@ def new_game() -> Engine:
     # Equip first weapon
     player.equipment.toggle_equip(player.inventory.get_first_weapon(), add_message=False)
     # auto_pickup lit
-    player.auto_pickup_list = [ItemType.POTION.value, ItemType.SCROLL.value]
+    player.auto_pickup_list = [ItemType.POTION.value, ItemType.DRUG.value, ItemType.SCROLL.value]
     # place in turn queue
     engine.turnqueue.schedule(0, player)
 

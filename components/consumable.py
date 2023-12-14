@@ -10,6 +10,7 @@ from components.inventory import Inventory
 from components.base_component import BaseComponent
 from exceptions import Impossible
 from input_handlers import SingleRangedAttackHandler, AreaRangedAttackHandler, ActionOrHandler
+from various_enum import EffectType
 
 if TYPE_CHECKING:
     from entity import Actor, Item
@@ -51,7 +52,17 @@ class HealingConsumable(Consumable):
             self.consume()
         else:
             raise Impossible("Your health is already full." )
-    
+
+class SpeedConsumable(Consumable):
+    def __init__(self, duration: int, speed:int):
+        self.duration = duration
+        self.speed = speed
+
+    def activate(self, action: actions.ItemAction) -> None:
+        action.entity.effects[EffectType.SPEED.value] = {"duration": self.duration, "speed": self.speed, "name": "Speed"}
+        self.consume()
+
+
 class LightningDamageConsumable(Consumable):
     def __init__(self, damage: int):
         self.damage = damage

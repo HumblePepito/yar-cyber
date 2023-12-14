@@ -38,7 +38,7 @@ class FireLine:
 
         self.path: List[Tuple[int, int]]
         self.entities: List[Entity] = []
-        self.combat_stat: Dict = {}# TODO : populate each time a new entity is aimed at / change to numpy to extend cache
+        self.combat_stat: Dict = {}# TODO change to numpy to extend cache
         # self.is_under_cover = []
 
     def compute(self, shooter: Entity, target_xy: Tuple[int, int]) -> None:

@@ -6,7 +6,8 @@ import random
 
 from typing import List, Optional, Tuple, TYPE_CHECKING
 from entity import Actor
-from various_enum import ItemType
+from various_enum import EffectType, ItemType
+
 
 import exceptions
 import color
@@ -37,7 +38,15 @@ class Action:
 
     def reschedule(self) -> None:
         # by default, every action take 60
-        self.engine.turnqueue.reschedule(60,self.entity)
+        delay = 60
+        try:
+            delay = delay*100//self.entity.effects[EffectType.SPEED.value]['speed']
+        except AttributeError:
+            pass # either an Hazard or no effect
+        except KeyError:
+            pass
+
+        self.engine.turnqueue.reschedule(delay,self.entity)
 
     def act(self) -> None:
         """Perform this action with the objects needed to determine its scope.

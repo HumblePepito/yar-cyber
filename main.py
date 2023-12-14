@@ -153,6 +153,10 @@ def main(stdscr) -> None:
                         # auto mode
                         handler = engine.turn_loop_auto(handler)
                     
+            except IndexError:
+                # turnqueue pb is the most common
+                logger.critical(traceback.format_exc())
+                raise
             except Exception:  # Handle exceptions in game.
                 logger.critical(traceback.format_exc())
                 handler.engine.message_log.add_message("Exception raised at Main level. Check logfile.", color.error) # nuance avec isinstance    

@@ -12,6 +12,7 @@ class ItemType(Enum):
     RANGED_WEAPON = auto()
     ARMOR_SUIT = auto()
     POTION = auto()
+    DRUG = auto()
     GOLD = auto()
     SCROLL = auto()
 
@@ -28,6 +29,11 @@ class RenderOrder(Enum):
     ITEM = auto()
     CLOUD = auto()
     ACTOR = auto()
+
+class EffectType(Enum):
+    CONFUSION = auto()
+    SPEED = auto()
+
 
 # class PickupType(Enum):
 #     POTION = ItemType.POTION.value
