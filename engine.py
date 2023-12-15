@@ -114,11 +114,11 @@ class Engine:
                 ##### Events that stops the auto loop #####
                 
                 # Stop auto if a key is pressed
-                # for event in util.event.get():
-                #     if isinstance(event, tcod.event.KeyDown):
-                #         self.player.ai.is_auto = False
-                #         self.logger.info(f"Auto-mode {self.player.ai.is_auto}")
-                #         handler = MainGameEventHandler(self)
+                for event in util.event.get():
+                    if isinstance(event, tcod.event.KeyDown):
+                        self.player.ai.is_auto = False
+                        self.logger.info(f"Auto-mode {self.player.ai.is_auto}")
+                        handler = MainGameEventHandler(self)
 
                 try:
                     handler.handle_action(self.player.ai)
