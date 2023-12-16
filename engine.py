@@ -194,7 +194,7 @@ class Engine:
             render_ascii_bar(console,"+",color.b_cyan,"*",color.b_blue,X_info+len(msg)+1,1,self.player.fightable.sp-24,24,24)
 
 
-        console.print(x=X_info,y=2,string=f"Player lvl: {self.player.level.current_level} - Floor lvl:  {self.game_world.current_floor} - Turn: {self.turn_count}")
+        console.print(x=X_info,y=2,string=f"Player lvl:{self.player.level.current_level} - Floor lvl:{self.game_world.current_floor} - Turn:{self.turn_count}")
 
         weapon = self.player.equipment.weapon
         clip_msg = ""
