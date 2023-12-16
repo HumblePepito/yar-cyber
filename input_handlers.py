@@ -688,7 +688,6 @@ class MainGameEventHandler(EventHandler):
         elif key == tcod.event.KeySym.o:
             player.ai = components.ai.ExploreMap(player, player.ai)
             return player.ai
-            # return actions_ai.ExploreAIAction(player)
         elif key in MOVE_KEYS and modifier & (tcod.event.KMOD_LSHIFT | tcod.event.KMOD_RSHIFT):
             dx, dy = MOVE_KEYS[key]
             player.ai = components.ai.Run(player, player.ai, dx, dy)
@@ -884,10 +883,8 @@ class TravelHandler(AskUserEventHandler):
             dest_xy = self.engine.game_map.downstairs_location
             player.ai = components.ai.MoveTo(player, player.ai, dest_xy)
             return player.ai
-            # return actions_ai.TravelAIAction(player,">")
         elif key == tcod.event.KeySym.LESS:
             dest_xy = self.engine.game_map.upstairs_location
             player.ai = components.ai.MoveTo(player, player.ai, dest_xy)
             return player.ai
-            # return actions_ai.TravelAIAction(player,"<")
 
