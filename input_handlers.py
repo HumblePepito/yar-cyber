@@ -103,6 +103,10 @@ class EventHandler(BaseEventHandler):
             if self.engine.player.level.requires_level_up:
                 return LevelUpEventHandler(self.engine)
             return MainGameEventHandler(self.engine)  # Return to the main handler, waiting for a keystroke
+        else:
+            # Impossible exception raised => must stop auto_action
+            if self.engine.player.ai.is_auto:
+                raise exceptions.AutoQuit("You stop your actions")
 
         return self
 

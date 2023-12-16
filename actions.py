@@ -81,10 +81,10 @@ class PickupAction(Action):
                 #self.engine.game_map.entities.remove(item)
                 item.remove()
             else:
-                if self.entity.ai.is_auto:
-                    raise exceptions.AutoQuit("Your inventory is full.")
-                else:
-                    raise exceptions.Impossible("Your inventory is full.")
+                # if self.entity.ai.is_auto:
+                #     raise exceptions.AutoQuit("Your inventory is full.")
+                # else:
+                    raise exceptions.Impossible("Impossible, your inventory is full.")
         else:
             raise exceptions.Impossible("No object to pickup here.")
 
@@ -240,18 +240,17 @@ class MovementAction(ActionWithDirection):
             raise exceptions.Impossible("Destination is out of bounds.")
         if not self.engine.game_map.tiles["walkable"][dest_x, dest_y]:
             raise exceptions.Impossible("Destination is blocked by a tile.")
-        if self.engine.game_map.get_blocking_entity_at_location(dest_x, dest_y):
-            raise exceptions.Impossible("Destination is blocked by an entity... impossible ?? (vs MeleeAction)")
-
+        if self.engine.game_map.get_blocking_entity_at_location(dest_x, dest_y):            
+            # if self.entity.ai.is_auto:
+            #     raise exceptions.AutoQuit("Destination is blocked") # TODO : deal AutoQuit in case of ai_auto
+            # else:
+                raise exceptions.Impossible("Impossible, destination is blocked")
         self.entity.move(self.dx, self.dy)
          
         # Player only : camera and pickup (for monster, check ai)
         if self.engine.player == self.entity:
             self.engine.renderer.camera.move(self.dx, self.dy)
-            # while ( self.engine.game_map.get_item_at_location(self.entity.x, self.entity.y)
-            #         and self.entity.auto_pickup
-            #         and self.engine.game_map.get_item_at_location(self.entity.x, self.entity.y).item_type.value in self.entity.auto_pickup_list):
-            #     PickupAction(self.entity).act()
+
             items = set(self.engine.game_map.get_items_at_location(self.entity.x, self.entity.y))
             msg = ""
             for item in items:
@@ -332,10 +331,6 @@ class Reload(Action):
             self.engine.message_log.add_message("You reload your weapon")
         else:
             self.engine.message_log.add_message(f"{self.entity.name.capitalize()} reloads its {self.item.name}")
-
-    def reschedule(self) -> None:
-        # by default, every action take 60
-        self.engine.turnqueue.reschedule(33,self.entity)
 
 
 class AutoAttack(FireAction):
