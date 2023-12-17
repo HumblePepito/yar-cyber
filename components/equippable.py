@@ -175,10 +175,12 @@ class RangedWeapon(Equippable):
 
                 if damage > target.fightable.armor:
                     self.engine.message_log.add_message(f"{attack_desc} for {max(0, damage-armor_reduction)} hit points.",attack_color)
-                    target.fightable.hp -= max(0, damage-armor_reduction)
+                    target.fightable.take_damage(max(0, damage-armor_reduction))
+                    target.fightable.take_stun(max(0, damage//2-armor_reduction))
                 else:
                     self.engine.message_log.add_message(f"{attack_desc} for {max(0, damage-armor_reduction)} stun points.",attack_color)
-                    target.fightable.sp += max(0, damage-armor_reduction)
+                    target.fightable.take_stun(max(0, damage-armor_reduction))
+                    target.fightable.take_damage(max(0, damage//2-armor_reduction))
 
                 # Animation
                 for [i, j] in fire_line.path:

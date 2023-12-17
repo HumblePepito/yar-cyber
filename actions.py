@@ -37,8 +37,7 @@ class Action:
         self.end_action()
 
     def reschedule(self) -> None:
-        # by default, every action take 60
-        delay = 60
+        delay = self.entity.action_speed
         try:
             delay = delay*100//self.entity.effects[EffectType.SPEED.value]['speed']
         except AttributeError:

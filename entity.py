@@ -169,6 +169,7 @@ class Actor(Entity):
         self.hunker_stack = 0
         self.aim_stack = 0
         self.effects = {}
+        self.base_speed = 60  # by default, every action take 60
 
     @property
     def is_alive(self) -> bool:
@@ -179,6 +180,9 @@ class Actor(Entity):
     def see_actor(self) -> bool:
         return bool(set(self.gamemap.visible_actors)-{self})   
 
+    @property
+    def action_speed(self) -> int:
+        return self.base_speed + self.fightable.stun_point//3 + (self.fightable.max_hp-self.fightable.hp)//5
 
 
 # TODO : consumable and equippable can also be two different classes for specialization sake (<> simplicity)

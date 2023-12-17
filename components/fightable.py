@@ -29,7 +29,7 @@ class Fightable(BaseComponent):
         self.base_defense = base_defense
         self.base_armor = base_armor
         self.base_attack = base_attack
-        self.sp = 0 # TODO : use _sp as float and sp as int, sp = round-(_sp)
+        self.stun_point = 0 # TODO : use _sp as float and sp as int, sp = round-(_sp)
 
     @property
     def hp(self) -> int:
@@ -37,7 +37,7 @@ class Fightable(BaseComponent):
     
     @property
     def defense(self) -> int:
-        return self.base_defense + self.defense_bonus - self.sp//3
+        return max(0,self.base_defense + self.defense_bonus - self.stun_point//3 - (self.max_hp-self.hp)//5)
 
     @property
     def armor(self) -> int:
@@ -45,7 +45,7 @@ class Fightable(BaseComponent):
 
     @property
     def attack(self) -> int:
-        return self.base_attack + self.attack_bonus- self.sp//3
+        return max(0,self.base_attack + self.attack_bonus - self.stun_point//3 - (self.max_hp-self.hp)//5)
 
 
     @property
@@ -92,6 +92,9 @@ class Fightable(BaseComponent):
 
     def take_damage(self, amount:int) -> None:
         self.hp -= amount
+
+    def take_stun(self, amount:int) -> None:
+        self.stun_point += amount
 
 class Fighter(Fightable):
     parent: Actor
