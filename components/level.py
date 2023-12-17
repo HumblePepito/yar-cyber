@@ -69,7 +69,7 @@ class Level(BaseComponent):
     def increase_defense(self, amount: int = 1) -> None:
         self.parent.fightable.base_defense += amount
 
-        self.engine.message_log.add_message("Your movements are getting swifter!")
+        self.engine.message_log.add_message("You are nimble!")
 
         self.increase_level()
 
@@ -77,5 +77,12 @@ class Level(BaseComponent):
         self.parent.fightable.base_armor += amount
 
         self.engine.message_log.add_message("Your skin is getting thicker!")
+
+        self.increase_level()
+
+    def increase_speed(self, amount: int = 1) -> None:
+        self.parent.base_speed = round(self.parent.base_speed * 0.95)
+
+        self.engine.message_log.add_message("Your movements are swift!")
 
         self.increase_level()
