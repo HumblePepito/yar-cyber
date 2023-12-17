@@ -182,7 +182,7 @@ class Actor(Entity):
 
     @property
     def action_speed(self) -> int:
-        return self.base_speed + self.fightable.stun_point//3 + (self.fightable.max_hp-self.fightable.hp)//5
+        return self.base_speed + self.fightable.stun_point//3 + (self.fightable.max_hp-self.fightable.hp)//6
 
 
 # TODO : consumable and equippable can also be two different classes for specialization sake (<> simplicity)

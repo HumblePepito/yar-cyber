@@ -38,7 +38,7 @@ class Fightable(BaseComponent):
     
     @property
     def defense(self) -> int:
-        return max(0,self.base_defense + self.defense_bonus - self.stun_point//3 - (self.max_hp-self.hp)//5)
+        return max(0,self.base_defense + self.defense_bonus - self.stun_point//3 - (self.max_hp-self.hp)//6)
 
     @property
     def armor(self) -> int:
@@ -46,7 +46,7 @@ class Fightable(BaseComponent):
 
     @property
     def attack(self) -> int:
-        return max(0,self.base_attack + self.attack_bonus - self.stun_point//3 - (self.max_hp-self.hp)//5)
+        return max(0,self.base_attack + self.attack_bonus - self.stun_point//3 - (self.max_hp-self.hp)//6)
 
 
     @property
@@ -108,7 +108,7 @@ class Fightable(BaseComponent):
 class Fighter(Fightable):
     parent: Actor
 
-    def __init__(self, hp: int, base_defense: int = 0, base_armor: int = 0, base_attack: int = 0, regen_rate: int = 10):
+    def __init__(self, hp: int, base_defense: int = 0, base_armor: int = 0, base_attack: int = 0, regen_rate: int = 20):
         super().__init__(hp, base_defense, base_armor, base_attack)
         self.regen_rate: int = regen_rate # for 100 turns
 
