@@ -143,7 +143,7 @@ class Engine:
         self.turn_count += increment
         self.turnqueue.last_time = self.turnqueue.current_time 
         for actor in self.game_map.actors:
-            actor.fightable.sp = max(0, actor.fightable.sp-increment)
+            actor.fightable.stun_point = max(0, actor.fightable.stun_point-increment)
         
             if actor.effects:
                 for key in list(actor.effects):
@@ -187,11 +187,11 @@ class Engine:
         console.print(x=X_info, y=0, string=msg)
         render_ascii_bar(console,"=",progress_color(self.player.fightable.hp,self.player.fightable.max_hp),"-",color.b_darkgray,X_info+len(msg)+1,0,self.player.fightable.hp,self.player.fightable.max_hp,24)
         
-        console.print(x=X_info, y=1, string=f"Stun:  {self.player.fightable.sp}")
-        if self.player.fightable.sp <= 24:
-            render_ascii_bar(console,"*",color.b_blue,"-",color.b_darkgray,X_info+len(msg)+1,1,self.player.fightable.sp,24,24)
+        console.print(x=X_info, y=1, string=f"Stun:  {self.player.fightable.stun_point}")
+        if self.player.fightable.stun_point <= 24:
+            render_ascii_bar(console,"*",color.b_blue,"-",color.b_darkgray,X_info+len(msg)+1,1,self.player.fightable.stun_point,24,24)
         else:
-            render_ascii_bar(console,"+",color.b_cyan,"*",color.b_blue,X_info+len(msg)+1,1,self.player.fightable.sp-24,24,24)
+            render_ascii_bar(console,"+",color.b_cyan,"*",color.b_blue,X_info+len(msg)+1,1,self.player.fightable.stun_point-24,24,24)
 
 
         console.print(x=X_info,y=2,string=f"Player lvl:{self.player.level.current_level} - Floor lvl:{self.game_world.current_floor} - Turn:{self.turn_count}")
