@@ -279,8 +279,14 @@ class Hazard(Entity):
         self.fightable = fightable
         self.fightable.parent = self
         self.blocks_view = blocks_view
+        self.base_speed = 60  # by default, every action take 60
 
     @property
     def is_alive(self) -> bool:
         """Returns True as long as this actor can perform actions."""
         return bool(self.fightable.hp)
+    
+    @property
+    def action_speed(self) -> int:
+        return self.base_speed
+    
