@@ -99,7 +99,7 @@ player = Actor(
     name="Player",
     ai_cls=HostileEnemy,
     equipment=Equipment(),
-    fightable=Fighter(hp=30, base_defense=4, base_attack=8, base_armor=2),
+    fightable=Fighter(hp=30, base_defense=4, base_attack=8, base_armor=2,regen_rate=20),
     inventory=Inventory(26, [gun,grenade_launcher,chain_mail,]),
     level=Level(level_up_base=200),
 )
@@ -119,7 +119,7 @@ troll = Actor(
     name="Troll",
     ai_cls=HostileEnemy,
     equipment=Equipment(),
-    fightable=Fighter(hp=16, base_defense=2, base_attack=6, base_armor =6),
+    fightable=Fighter(hp=16, base_defense=2, base_attack=6, base_armor =6,regen_rate=150),
     inventory=Inventory(26,[revolver, grenade_launcher, sword, leather_armor, chain_mail]),
     level=Level(xp_given=100),
     size=SizeClass.BIG

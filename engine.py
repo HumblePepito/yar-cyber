@@ -143,8 +143,9 @@ class Engine:
         self.turn_count += increment
         self.turnqueue.last_time = self.turnqueue.current_time 
         for actor in self.game_map.actors:
-            actor.fightable.stun_point = max(0, actor.fightable.stun_point-increment)
-        
+            actor.fightable.recover_stun(increment)
+            actor.fightable.regen_hp(increment)
+
             if actor.effects:
                 for key in list(actor.effects):
                     actor.effects[key]['duration'] -= 1

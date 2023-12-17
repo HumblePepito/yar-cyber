@@ -25,15 +25,16 @@ class Fightable(BaseComponent):
 
     def __init__(self, hp: int, base_defense: int = 0, base_armor: int = 0, base_attack: int = 0):
         self.max_hp = hp
-        self._hp = hp
+        self._hp = hp*100
         self.base_defense = base_defense
         self.base_armor = base_armor
         self.base_attack = base_attack
         self.stun_point = 0 # TODO : use _sp as float and sp as int, sp = round-(_sp)
+        self.regen_rate = 0
 
     @property
     def hp(self) -> int:
-        return self._hp
+        return self._hp//100
     
     @property
     def defense(self) -> int:
@@ -74,7 +75,7 @@ class Fightable(BaseComponent):
 
     @hp.setter
     def hp(self, value: int) -> None:
-        self._hp = max(0, min(value, self.max_hp))
+        self._hp = max(0, min(value*100, self.max_hp*100))
         if self.hp <= 0: #and self.parent.ai:
             self.die()
 
@@ -85,10 +86,14 @@ class Fightable(BaseComponent):
         if self.hp == self.max_hp:
             return 0
 
-        heal_value = min(self.max_hp, self.hp + amount) - self.hp
-
-        self.hp += heal_value
-        return heal_value
+        heal_value = min(self.max_hp*100, self._hp + amount*100) - self._hp
+        self._hp += heal_value
+        if self.parent is self.engine.player:
+            print(f"amount: {amount}")
+            print(f"amount: {amount}")
+            print(f"heal_value: {heal_value}")
+            print(f"self._hp:{self._hp} / {self.hp}")
+        return heal_value//100
 
     def take_damage(self, amount:int) -> None:
         self.hp -= amount
@@ -96,8 +101,16 @@ class Fightable(BaseComponent):
     def take_stun(self, amount:int) -> None:
         self.stun_point += amount
 
+    def recover_stun(self, amount:int) -> None:
+        self.stun_point = max(0, self.stun_point-amount)
+
+
 class Fighter(Fightable):
     parent: Actor
+
+    def __init__(self, hp: int, base_defense: int = 0, base_armor: int = 0, base_attack: int = 0, regen_rate: int = 10):
+        super().__init__(hp, base_defense, base_armor, base_attack)
+        self.regen_rate: int = regen_rate # for 100 turns
 
     def die(self) -> None:
         death_message = None
@@ -139,6 +152,14 @@ class Fighter(Fightable):
         self.parent.blocks_movement = False
         self.parent.name = f"remains of {self.parent.name}"
         self.engine.turnqueue.unschedule(self.parent, self.engine.active_entity)
+
+    def regen_hp(self, turn:int = 1) -> None:
+        if self.hp == self.max_hp:
+            return 0
+
+        regen_value = min(self.max_hp*100, self._hp + self.regen_rate*turn) - self._hp
+        self._hp += regen_value
+
 
 class Barrel(Fightable):
     parent: Feature
