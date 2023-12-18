@@ -88,11 +88,7 @@ class Fightable(BaseComponent):
 
         heal_value = min(self.max_hp*100, self._hp + amount*100) - self._hp
         self._hp += heal_value
-        if self.parent is self.engine.player:
-            print(f"amount: {amount}")
-            print(f"amount: {amount}")
-            print(f"heal_value: {heal_value}")
-            print(f"self._hp:{self._hp} / {self.hp}")
+
         return heal_value//100
 
     def take_damage(self, amount:int) -> None:
