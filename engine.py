@@ -99,7 +99,6 @@ class Engine:
                 try:
                     self.handle_enemy_turns()
                 except exceptions.Dead:
-                    print("dead")
                     return GameOverEventHandler(self)
 
     def turn_loop_auto(self, handler: BaseEventHandler) -> BaseEventHandler:
