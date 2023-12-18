@@ -323,22 +323,22 @@ class LevelUpEventHandler(AskUserEventHandler):
         console.print(
             x=x + 1,
             y=5,
-            string=f"b) Strength (+1 attack, from {self.engine.player.fightable.base_attack})", # TODO : check !!!
+            string=f"b) Strength (+1 attack, from {self.engine.player.fightable.base_attack})",
         )
         console.print(
             x=x + 1,
             y=6,
-            string=f"c) Agility (+1 defense, from {self.engine.player.fightable.base_defense})", # TODO : check !!!
+            string=f"c) Agility (+1 defense, from {self.engine.player.fightable.base_defense})",
         )
         console.print(
             x=x + 1,
             y=7,
-            string=f"d) Resistance (+1 armor, from {self.engine.player.fightable.base_armor})", # TODO : check !!!
+            string=f"d) Resistance (+1 armor, from {self.engine.player.fightable.base_armor})",
         )
         console.print(
             x=x + 1,
             y=8,
-            string=f"d) Speed (-5% action delay, from {self.engine.player.action_speed})", # TODO : check !!!
+            string=f"e) Speed (-5% action delay, from {self.engine.player.action_speed})",
         )
 
     def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[ActionOrHandler]:
@@ -346,7 +346,7 @@ class LevelUpEventHandler(AskUserEventHandler):
         key = event.sym
         index = key - tcod.event.KeySym.a
 
-        if 0 <= index <= 3:
+        if 0 <= index <= 4:
             if index == 0:
                 player.level.increase_max_hp()
             elif index == 1:
@@ -355,7 +355,7 @@ class LevelUpEventHandler(AskUserEventHandler):
                 player.level.increase_defense()
             elif index == 3:
                 player.level.increase_armor()
-            elif index == 3:
+            elif index == 4:
                 player.level.increase_speed(amount=5)
         else:
             self.engine.message_log.add_message("Invalid entry.", color.invalid)
