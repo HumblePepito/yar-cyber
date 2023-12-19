@@ -16,10 +16,10 @@ wall = Entity(
 )
 
 healingPotion = Item(
-    char="!", color=color.n_purple, name="Healing potion", item_type=ItemType.POTION, consumable=consumable.HealingConsumable(amount=5),
+    char="+", color=color.n_purple, name="Healing kit", item_type=ItemType.POTION, consumable=consumable.HealingConsumable(amount=5),
 )
 speedDrug = Item(
-    char="£", color=color.b_cyan, name="Speed drug", item_type=ItemType.DRUG, consumable=consumable.SpeedConsumable(duration=5,speed=200),
+    char="!", color=color.b_cyan, name="Speed drug", item_type=ItemType.DRUG, consumable=consumable.SpeedConsumable(duration=5,speed=200),
 )
 lightningScroll = Item(
     char="?", color=(127, 127, 255), name="Scroll of lightning", item_type=ItemType.SCROLL, consumable=consumable.LightningDamageConsumable(damage=18),
