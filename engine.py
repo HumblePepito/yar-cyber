@@ -12,7 +12,7 @@ from various_enum import ItemType
 
 
 #from actions import EscapeAction, MovementAction, BumpAction, MeleeAction
-from render_functions import render_ascii_bar
+from render_functions import render_ascii_bar, render_ascii_slider
 from message_log import MessageLog
 
 import exceptions
@@ -184,18 +184,22 @@ class Engine:
 
         # section personnage
         msg=f"Health:{self.player.fightable.hp}/{self.player.fightable.max_hp}"
-        console.print(x=X_info, y=0, string=msg)
-        render_ascii_bar(console,"=",progress_color(self.player.fightable.hp,self.player.fightable.max_hp),"-",color.b_darkgray,X_info+len(msg)+1,0,self.player.fightable.hp,self.player.fightable.max_hp,24)
-        
-        console.print(x=X_info, y=1, string=f"Stun:  {self.player.fightable.stun_point}")
+        y=0
+        console.print(x=X_info, y=y, string=msg)
+        render_ascii_bar(console,"=",progress_color(self.player.fightable.hp,self.player.fightable.max_hp),"-",color.b_darkgray,X_info+len(msg)+1,0,self.player.fightable.hp,self.player.fightable.max_hp,25)
+        y+=1
+        console.print(x=X_info, y=y, string=f"Speed: {self.player.action_speed}")
+        render_ascii_slider(console,"-",color.b_darkgray,"|",color.b_blue,X_info+len(msg)+1,y,self.player.action_speed,0,"0",120,"120",25)
+        y+=1
+        console.print(x=X_info, y=y, string=f"Stun:  {self.player.fightable.stun_point}")
         if self.player.fightable.stun_point <= 24:
-            render_ascii_bar(console,"*",color.b_blue,"-",color.b_darkgray,X_info+len(msg)+1,1,self.player.fightable.stun_point,24,24)
+            render_ascii_bar(console,"*",color.b_blue,"-",color.b_darkgray,X_info+len(msg)+1,y,self.player.fightable.stun_point,25,25)
         else:
-            render_ascii_bar(console,"+",color.b_cyan,"*",color.b_blue,X_info+len(msg)+1,1,self.player.fightable.stun_point-24,24,24)
+            render_ascii_bar(console,"+",color.b_cyan,"*",color.b_blue,X_info+len(msg)+1,y,self.player.fightable.stun_point-25,25,25)
+        y+=1
 
-
-        console.print(x=X_info,y=2,string=f"Player lvl:{self.player.level.current_level} - Floor lvl:{self.game_world.current_floor} - Turn:{self.turn_count}")
-
+        console.print(x=X_info,y=y,string=f"Player lvl:{self.player.level.current_level} - Floor lvl:{self.game_world.current_floor} - Turn:{self.turn_count}")
+        y+=1
         weapon = self.player.equipment.weapon
         clip_msg = ""
         if weapon is None:
@@ -205,27 +209,29 @@ class Engine:
             clip_msg = f"{weapon.equippable.current_clip}/{weapon.equippable.clip_size}"
         elif weapon.item_type == ItemType.MELEE_WEAPON:
             msg = f"Weapon: {weapon.name}"
-        
-        console.print(x=X_info,y=3,string=msg)
+        console.print(x=X_info,y=y,string=msg)
         if clip_msg:
-            console.print(x=X_info+len(msg),y=3,string=clip_msg,fg=progress_color(weapon.equippable.current_clip,weapon.equippable.clip_size))
+            console.print(x=X_info+len(msg),y=y,string=clip_msg,fg=progress_color(weapon.equippable.current_clip,weapon.equippable.clip_size))
         if self.player.aim_stack:
-            console.print(x=X_info+len(msg)+len(clip_msg),y=3,string=f" Aim {self.player.aim_stack}")
-
+            console.print(x=X_info+len(msg)+len(clip_msg),y=y,string=f" Aim {self.player.aim_stack}")
+        y+=1
         if self.player.effects:
             status=""
             l=0
             for key in list(self.player.effects):
                 status += f"{self.player.effects[key]['name']}:{self.player.effects[key]['duration']} " 
                 if self.player.effects[key]['duration'] == 1:
-                    console.print(x=X_info,y=4+l,string=status,fg=color.n_gray)
+                    console.print(x=X_info+l,y=y,string=status,fg=color.b_darkgray)
                 else:
-                    console.print(x=X_info,y=4+l,string=status)
-                l=len(status)
+                    console.print(x=X_info+l,y=y,string=status)
+                l=len(status)+1
                 
-        # section message
-        self.message_log.render(console,X_info,18,X_info,6)
-
+        y+=1
+        y+=1
+        y+=1
+        y+=1
+        y+=1
+        y+=1
         # section liste monstres
         i=0
         for actor in set(self.game_map.actors) - {self.player}:
@@ -236,9 +242,12 @@ class Engine:
                 else:
                     string=actor.name.capitalize()
 
-                console.print(x=X_info,y=11+i,string=" " ,bg=progress_color(actor.fightable.hp,actor.fightable.max_hp))
-                console.print(x=X_info+2,y=11+i,string=string,fg=color.red)
+                console.print(x=X_info,y=y+i,string=" " ,bg=progress_color(actor.fightable.hp,actor.fightable.max_hp))
+                console.print(x=X_info+2,y=y+i,string=string,fg=color.red)
                 i=i+1
+
+        # section message
+        self.message_log.render(console,X_info,18,X_info,6)
 
     def save_as(self, filename: str) -> None:
         """Save this Engine instance as a compressed file."""
