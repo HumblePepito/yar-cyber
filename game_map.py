@@ -200,6 +200,7 @@ class GameMap:
 class GameWorld:
     """
     Holds the settings for the GameMap, and generates new maps when moving down the stairs.
+    Also keep tracks of each level
     """
 
     def __init__(
@@ -225,12 +226,27 @@ class GameWorld:
 
         self.current_floor = current_floor
 
-    def generate_floor(self) -> None:
+        self.levels = {}
+
+    def set_floor(self, level: int, branch: str = "main") -> None:
+        """ initiate engine with the target level"""
+
+        # store current level in its state and player position
+        if self.engine.turn_count != 0:
+            self.levels[(branch,self.current_floor)] = (self.engine.game_map,self.engine.player.x,self.engine.player.y)
+
+        self.current_floor = level
+        if (branch,level) in list(self.levels):
+            self.engine.game_map, self.engine.player.x,self.engine.player.y = self.levels[(branch,level)]
+        else:
+            new_level =  self.generate_floor()
+
+            self.engine.game_map = new_level
+
+    def generate_floor(self) -> GameMap:
         from procgen import generate_dungeon
-
-        self.current_floor += 1
-
-        self.engine.game_map = generate_dungeon(
+        
+        return generate_dungeon(
             max_rooms=self.max_rooms,
             room_min_size=self.room_min_size,
             room_max_size=self.room_max_size,

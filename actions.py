@@ -151,7 +151,7 @@ class DescendAction(Action):
         """
         #if self.engine.game_map.tiles[self.entity.x, self.entity.y] == tile_types.down_stairs:
         if (self.entity.x, self.entity.y) == self.engine.game_map.downstairs_location:
-            self.engine.game_world.generate_floor()
+            self.engine.game_world.set_floor(level=self.engine.game_world.current_floor+1)
             self.engine.renderer.camera.x = self.engine.renderer.x = self.engine.player.x
             self.engine.renderer.camera.y = self.engine.renderer.y = self.engine.player.y
             self.engine.message_log.add_message(
@@ -167,12 +167,20 @@ class AscendAction(Action):
         """
         Escape upstairs, if any exist at the entity's location.
         """
-        #if self.engine.game_map.tiles[self.entity.x, self.entity.y] == tile_types.down_stairs:
         if (self.entity.x, self.entity.y) == self.engine.game_map.upstairs_location:
-            #self.engine.game_world.generate_floor()
-            self.engine.message_log.add_message(
-                "You can't escape.", color.descend
-            )
+            if self.engine.game_world.current_floor == 1:
+                self.engine.message_log.add_message(
+                    "You can't escape.", color.descend
+                )
+            else:
+                # self.engine.game_world.levels[(branch,level)] = self.engine.game_map
+                self.engine.game_world.set_floor(level=self.engine.game_world.current_floor-1)
+                self.engine.renderer.camera.x = self.engine.renderer.x = self.engine.player.x
+                self.engine.renderer.camera.y = self.engine.renderer.y = self.engine.player.y
+                self.engine.message_log.add_message(
+                    "You climb the stairs.", color.descend
+                )
+            
 
         else:
             raise exceptions.Impossible("There are no stairs here.")
