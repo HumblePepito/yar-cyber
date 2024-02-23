@@ -25,8 +25,8 @@ background_image = tcod.image.load("./png/menu_background.png")[:, :, :3]
 
 def new_game() -> Engine:
     """Return a brand new game session as an Engine instance."""
-    map_width = 50 #80
-    map_height = 30 #80
+    map_width = 80
+    map_height = 60
 
     room_max_size = 12
     room_min_size = 4
