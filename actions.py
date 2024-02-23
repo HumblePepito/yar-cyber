@@ -169,9 +169,7 @@ class AscendAction(Action):
         """
         if (self.entity.x, self.entity.y) == self.engine.game_map.upstairs_location:
             if self.engine.game_world.current_floor == 1:
-                self.engine.message_log.add_message(
-                    "You can't escape.", color.descend
-                )
+                    raise exceptions.Impossible("You can't escape.")
             else:
                 # self.engine.game_world.levels[(branch,level)] = self.engine.game_map
                 self.engine.game_world.set_floor(level=self.engine.game_world.current_floor-1)
