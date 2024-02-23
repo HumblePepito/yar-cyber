@@ -42,7 +42,7 @@ class FireLine:
         # self.is_under_cover = []
 
     def compute(self, shooter: Entity, target_xy: Tuple[int, int]) -> None:
-        """ There is only ONE fire line object.
+        """ There are only two fire line objects. One for the player, the other for hostile. Maybe new fire lines will be added for allies.
         Compute updates all stats of the fire line based on `shooter` and `target _xy`
            * `path`: as a (x,y) list, without the shooter, with the target
            * `target` if exists (either Actor or Feature)
