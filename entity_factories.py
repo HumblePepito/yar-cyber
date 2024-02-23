@@ -16,10 +16,14 @@ wall = Entity(
 )
 
 healingPotion = Item(
-    char="+", color=color.n_purple, name="Healing kit", item_type=ItemType.POTION, consumable=consumable.HealingConsumable(amount=5),
+    char="!", color=color.n_purple, name="Healing kit", item_type=ItemType.POTION, consumable=consumable.HealingConsumable(amount=5),
 )
 speedDrug = Item(
-    char="!", color=color.b_cyan, name="Speed drug", item_type=ItemType.DRUG, consumable=consumable.SpeedConsumable(duration=5,speed=200),
+    char="§",
+    color=color.n_cyan,
+    name="Speed drug",
+    item_type=ItemType.DRUG,
+    consumable=consumable.SpeedConsumable(duration=5,speed=200),
 )
 lightningScroll = Item(
     char="?", color=(127, 127, 255), name="Scroll of lightning", item_type=ItemType.SCROLL, consumable=consumable.LightningDamageConsumable(damage=18),
@@ -33,7 +37,10 @@ fireballScroll = Item(
 
 
 dagger = Item(
-    char=")", color=(0, 191, 255), name="Dagger", equippable=equippable.Dagger(), item_type= ItemType.MELEE_WEAPON,
+    char=")",
+    color=(0, 191, 255),
+    name="Dagger", equippable=equippable.Dagger(),
+    item_type= ItemType.MELEE_WEAPON,
 )
 
 sword = Item(
@@ -59,17 +66,26 @@ gun = Item(
     equippable=equippable.Gun(),
     item_type= ItemType.RANGED_WEAPON,
 )
-
 revolver = Item(
-    char=")", color=color.b_yellow, name="Revolver", equippable=equippable.Revolver(), item_type= ItemType.RANGED_WEAPON,
+    char=")",
+    color=color.b_yellow,
+    name="Revolver",
+    equippable=equippable.Revolver(),
+    item_type= ItemType.RANGED_WEAPON,
 )
-
 rifle = Item(
-    char=")", color=color.n_cyan, name="Rifle", equippable=equippable.Rifle(), item_type= ItemType.RANGED_WEAPON
+    char=")",
+    color=color.n_cyan,
+    name="Rifle",
+    equippable=equippable.Rifle(),
+    item_type= ItemType.RANGED_WEAPON
 )
-
 grenade_launcher = Item(
-    char=")", color=color.b_orange, name="Grenade Launcher", equippable=equippable.GrenadeLauncher(), item_type= ItemType.RANGED_WEAPON
+    char=")",
+    color=color.b_orange,
+    name="Grenade Launcher",
+    equippable=equippable.GrenadeLauncher(),
+    item_type= ItemType.RANGED_WEAPON
 )
 
 barrel = Feature(
@@ -120,7 +136,7 @@ troll = Actor(
     ai_cls=HostileEnemy,
     equipment=Equipment(),
     fightable=Fighter(hp=16, base_defense=2, base_attack=6, base_armor =6,regen_rate=150),
-    inventory=Inventory(26,[revolver, grenade_launcher, sword, leather_armor, chain_mail]),
+    inventory=Inventory(26,[rifle, grenade_launcher, sword, leather_armor, chain_mail]),
     level=Level(xp_given=100),
     size=SizeClass.BIG
 )
