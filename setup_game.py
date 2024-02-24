@@ -12,6 +12,8 @@ import pickle
 import traceback
 
 import color
+import util.var_global as uv
+
 from engine import Engine
 import entity_factories
 import input_handlers
@@ -55,6 +57,7 @@ def new_game() -> Engine:
         room_max_size=room_max_size,
         map_width=map_width,
         map_height=map_height,
+        seed_init=uv.seed_init,
     )
 
     engine.game_world.set_floor(level=1)

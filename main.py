@@ -42,7 +42,8 @@ def main(stdscr) -> None:
     )
     logger = logging.getLogger()
     util.var_global.logger = logger
-    logger.info(f"Commandline parameters: {config}")
+    logger.info(f"Command line parameters: {config}")
+    util.var_global.seed_init = config['seed']
 
     handler: input_handlers.BaseEventHandler = setup_game.MainMenu() # gets back with MainGameEventHandler
 
@@ -69,11 +70,11 @@ def main(stdscr) -> None:
         screen_width = 80
         screen_height = 24
         #https://python-tcod.readthedocs.io/en/latest/tcod/getting-started.html#dynamically-sized-console
-        if png:
-            tileset_filename=png
+        if config['png']:
+            tileset_filename=config['png']
         else:
-            tileset_filename="./png/Cheepicus_14x14.png"
-            # tileset_filename="./png/Bisasam_20x20_ascii.png"
+            #tileset_filename="./png/Cheepicus_14x14.png"
+            tileset_filename="./png/Bisasam_20x20_ascii.png"
 
         tileset = tcod.tileset.load_tilesheet(
             tileset_filename, 16, 16, CHARMAP_CP437_pepito
@@ -101,6 +102,7 @@ def main(stdscr) -> None:
     # Boucle principale !!
     engine_ok = False
     resize = False
+
     try:
         while True:
             if resize:
@@ -173,19 +175,18 @@ def main(stdscr) -> None:
 
 parser = argparse.ArgumentParser(description='Dive into cyber alternative life.',epilog='Have fun and stay alive...')
 parser.add_argument('-c', '--curses', action='store_true', help='use curses rendering in terminal')
-parser.add_argument('-s', '--seed', type=int, help='fixed seed for static generation')
+parser.add_argument('-s', '--seed', type=int, help='fixed seed for static generation (new game only)')
 parser.add_argument('-t', '--tiles', dest='png' , type=str, help="path to a specific PNG tiles file (charmap CP437)")
 parser.add_argument('-w', '--wizard', action='store_true', help='start in wizard mode')
 args = parser.parse_args()
 config = vars(args)
 
 if __name__ == "__main__":
-    if config['seed'] or config['wizard']:
-        print("Not yet implemented")
+    if config['wizard']:
+        print("wizard: Not yet implemented")
 
     if config['curses']:
         set_shorter_esc_delay_in_os()
         curses.wrapper(main)
     else:
-        png = config['png']
         main('dummy')

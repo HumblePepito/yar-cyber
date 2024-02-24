@@ -3,6 +3,8 @@ from __future__ import annotations
 from typing import Iterable, Iterator, Optional, TYPE_CHECKING
 # NamedTuple : https://stackoverflow.com/questions/2970608/what-are-named-tuples-in-python#2970722
 import numpy as np  # type: ignore
+import random
+
 from entity import Actor, Entity, Feature, Hazard, Item
 from fire_line import FireLine
 
@@ -212,7 +214,8 @@ class GameWorld:
         max_rooms: int,
         room_min_size: int,
         room_max_size: int,
-        current_floor: int = 0
+        seed_init: int,
+        current_floor: int = 0,
     ):
         self.engine = engine
 
@@ -227,6 +230,20 @@ class GameWorld:
         self.current_floor = current_floor
 
         self.levels = {}
+        self.world_seed: int
+        self.level_seeds = []
+
+        # Seed
+        if seed_init == -1:
+            self.world_seed = random.getrandbits(32)
+        else:
+            self.world_seed = seed_init
+
+        random.seed(a = self.world_seed)
+        for i in range(100):
+            self.level_seeds.append(random.getrandbits(32))
+
+        random.seed()
 
     def set_floor(self, level: int, branch: str = "main") -> None:
         """ initiate engine with the target level"""
@@ -239,9 +256,10 @@ class GameWorld:
         if (branch,level) in list(self.levels):
             self.engine.game_map, self.engine.player.x,self.engine.player.y = self.levels[(branch,level)]
         else:
+            random.seed(self.level_seeds.pop())
             new_level =  self.generate_floor()
-
             self.engine.game_map = new_level
+            random.seed()
 
     def generate_floor(self) -> GameMap:
         from procgen import generate_dungeon
