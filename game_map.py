@@ -16,9 +16,11 @@ if TYPE_CHECKING:
 
         
 class GameMap:
-    def __init__(self, engine: Engine, width: int, height: int, entities: Iterable[Entity] = ()):
+    def __init__(self, engine: Engine, width: int, height: int, branch: str, depth: int, entities: Iterable[Entity] = ()):
         self.engine = engine
         self.width, self.height = width, height
+        self.branch = branch
+        self.depth = depth
         self.entities = set(entities)
 
         self.tiles = np.full((width, height), fill_value=tile_types.wall, order="F")
@@ -28,6 +30,7 @@ class GameMap:
         self.upstairs_location =(0,0)
         self.downstairs_location =(0,0)
 
+        # Maybe, fire_line should be in engine ?? like update_fov
         self.player_lof = FireLine(game_map=self)
         self.hostile_lof = FireLine(game_map=self)
         self.wall: Entity = None
@@ -229,9 +232,9 @@ class GameWorld:
 
         self.current_floor = current_floor
 
-        self.levels = {}
+        self.floors = {}
         self.world_seed: int
-        self.level_seeds = []
+        self.floor_seeds = []
 
         # Seed
         if seed_init == -1:
@@ -241,27 +244,32 @@ class GameWorld:
 
         random.seed(a = self.world_seed)
         for i in range(100):
-            self.level_seeds.append(random.getrandbits(32))
+            self.floor_seeds.append(random.getrandbits(32))
 
         random.seed()
 
-    def set_floor(self, level: int, branch: str = "main") -> None:
+    def set_floor(self, depth: int, branch: str = "main") -> None:
         """ initiate engine with the target level"""
 
-        # store current level in its state and player position
-        if self.engine.turn_count != 0:
-            self.levels[(branch,self.current_floor)] = (self.engine.game_map,self.engine.player.x,self.engine.player.y)
+        # store current level in its state and player position & remove player from level that he is currently leaving
+        if self.engine.turn_count != 0: # except at creation of a new game
+            self.floors[(branch,self.current_floor)] = (self.engine.game_map,self.engine.player.x,self.engine.player.y)
+            # clean previous status 
+            self.engine.player.remove()
+            self.engine.game_map.visible[self.engine.game_map.visible == True] = False
 
-        self.current_floor = level
-        if (branch,level) in list(self.levels):
-            self.engine.game_map, self.engine.player.x,self.engine.player.y = self.levels[(branch,level)]
+        self.current_floor = depth
+
+        if (branch,depth) in list(self.floors):     
+            self.engine.game_map, player_x, player_y = self.floors[(branch,depth)]
+            self.engine.player.place(player_x, player_y, self.engine.game_map)
         else:
-            random.seed(self.level_seeds.pop())
-            new_level =  self.generate_floor()
-            self.engine.game_map = new_level
+            random.seed(self.floor_seeds.pop())
+            new_floor =  self.generate_floor(branch)
+            self.engine.game_map = new_floor
             random.seed()
 
-    def generate_floor(self) -> GameMap:
+    def generate_floor(self, branch: str = "main") -> GameMap:
         from procgen import generate_dungeon
         
         return generate_dungeon(
@@ -271,5 +279,7 @@ class GameWorld:
             map_width=self.map_width,
             map_height=self.map_height,
             engine=self.engine,
+            branch=branch,
+            depth=self.current_floor,
         )
 

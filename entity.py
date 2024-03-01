@@ -61,11 +61,16 @@ class Entity:
     @property
     def is_visible(self) -> bool:
         """Entity is visible in the FOV"""
-        return self.gamemap.visible[self.x, self.y]
+        if self.depth == self.gamemap.engine.game_world.current_floor:
+            return self.gamemap.visible[self.x, self.y]
 
     @property
     def is_actor(self) -> bool:
         return isinstance(self, Actor)
+
+    @property
+    def depth(self) -> int:
+        return self.gamemap.depth
 
     def spawn(self: T, gamemap: GameMap, x: int, y: int) -> T:
         """Spawn a copy of this instance at the given location."""

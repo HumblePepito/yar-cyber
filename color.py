@@ -80,6 +80,7 @@ enemy_atk = b_orange
 needs_target = b_cyan
 status_effect_applied = b_green
 descend = (0x9F, 0x3F, 0xFF)
+ascend = (0x9F, 0x3F, 0xFF)
 
 player_die = n_red
 enemy_die = n_red

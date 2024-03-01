@@ -60,7 +60,7 @@ def new_game() -> Engine:
         seed_init=uv.seed_init,
     )
 
-    engine.game_world.set_floor(level=1)
+    engine.game_world.set_floor(depth=1)
     engine.update_fov()
 
     engine.message_log.add_message(

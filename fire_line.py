@@ -29,6 +29,7 @@ class FireLine:
     parent: GameMap
 
     def __init__(self,game_map: GameMap):
+        # TODO : try no gameMap parameters and dinitialize parent after creation (in calling place) ??
         # self.game_map = game_map
         self.parent = game_map
         self.shooter:Actor = None

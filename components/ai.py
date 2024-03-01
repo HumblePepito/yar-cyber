@@ -71,6 +71,12 @@ class HostileEnemy(BaseAI):
            * wait until player comes in view
            * move toward the player and attack
         If player move out of view, Enemy base AI will move to the last known position of the player"""
+        
+        if self.entity.depth != self.engine.game_world.current_floor:
+            # TODO : define what should do these enemies
+            return
+        
+        
         if self.engine.game_map.visible[self.entity.x, self.entity.y]:
             target = self.engine.player
             dx = target.x - self.entity.x
