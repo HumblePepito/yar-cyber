@@ -102,7 +102,7 @@ class RangedWeapon(Equippable):
         if not self.engine.game_map.visible[target_xy]:
             raise Impossible("You cannot target an area that you cannot see.")
 
-        fire_line = self.gamemap.get_fire_line(shooter)
+        fire_line = self.engine.get_fire_line(shooter)
 
         hit_margin, target = hit_calculation(shooter, target)
         if hit_margin < 0 or (hit_margin == 0 and not target):
@@ -204,7 +204,7 @@ class RangedWeapon(Equippable):
         # log combat information
         if self.engine.logger.level <= 20:    # 20 for INFO messages
             if target and target.name != "Wall": 
-                lof = self.gamemap.get_fire_line(shooter=shooter)
+                lof = self.engine.get_fire_line(shooter=shooter)
                 ATT, DEF, COV = lof.get_hit_stat(target_xy=(target.x, target.y),target=target)
                 try:
                     armor_suit = target.equipment.armor_suit.name

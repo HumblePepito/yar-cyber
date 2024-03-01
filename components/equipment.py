@@ -119,7 +119,7 @@ class Equipment(BaseComponent):
             # # purge combat stats TODO : is the good place??
             # self.parent.gamemap.fire_line.combat_stat = {}
             
-            return ranged_weapon.get_fire_action(shooter)
+            return ranged_weapon.get_fire_action(shooter) # None ???
         except AttributeError:
             self.parent.gamemap.engine.message_log.add_message("You must wield a working ranged weapon.")
         

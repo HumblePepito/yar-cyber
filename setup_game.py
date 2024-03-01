@@ -61,6 +61,8 @@ def new_game() -> Engine:
     )
 
     engine.game_world.set_floor(depth=1)
+    # engine.player_lof.parent = engine.game_map
+    # engine.hostile_lof.parent = engine.game_map
     engine.update_fov()
 
     engine.message_log.add_message(

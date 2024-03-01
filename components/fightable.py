@@ -219,7 +219,7 @@ class ExplosiveBarrel(Fightable):
         grenade_launcher = copy.deepcopy(entity_factories.grenade_launcher)
         grenade_launcher.parent = self.gamemap
         
-        self.gamemap.hostile_lof.compute(shooter=self.parent,target_xy=(self.parent.x,self.parent.y))
+        self.gamemap.engine.hostile_lof.compute(shooter=self.parent,target_xy=(self.parent.x,self.parent.y))
         item_action = ItemAction(entity=self.parent, item=grenade_launcher) # TODO : self.parent already removed... but self.parent = barrel and item = grenade_laucher
         grenade_launcher.equippable.activate(item_action)
 

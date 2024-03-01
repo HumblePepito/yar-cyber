@@ -85,7 +85,7 @@ class HostileEnemy(BaseAI):
             weapon = self.entity.equipment.weapon
 
             # Reset cache as soon as it is not player's turn
-            self.engine.game_map.player_lof.combat_stat = {}
+            self.engine.player_lof.combat_stat = {}
             # Reset sentry status
             self.entity.hunker_stack = 0
             self.entity.aim_stack = 0
@@ -100,8 +100,8 @@ class HostileEnemy(BaseAI):
                 if weapon.item_type == ItemType.RANGED_WEAPON:
                     if weapon.equippable.current_clip > 0:
                         if self.entity.distance(target.x, target.y) <= weapon.equippable.base_range:
-                            self.engine.game_map.hostile_lof.compute(shooter= self.entity, target_xy=(target.x, target.y))
-                            self.engine.logger.debug([entity.name for entity in self.engine.game_map.player_lof.entities])
+                            self.engine.hostile_lof.compute(shooter= self.entity, target_xy=(target.x, target.y))
+                            self.engine.logger.debug([entity.name for entity in self.engine.player_lof.entities])
                             self.path = self.get_path_to(target.x, target.y)
                             # add a return to quit here this perform
                             return FireAction(self.entity, target).act()

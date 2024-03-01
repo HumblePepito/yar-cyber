@@ -11,6 +11,7 @@ from various_enum import ItemType, SizeClass
 
 if TYPE_CHECKING:
     from game_map import GameMap
+    from engine import Engine
     
 
 MOVE_KEYS = {
@@ -26,12 +27,11 @@ MOVE_KEYS = {
 }
 
 class FireLine:
-    parent: GameMap
+    parent: Engine
 
-    def __init__(self,game_map: GameMap):
-        # TODO : try no gameMap parameters and dinitialize parent after creation (in calling place) ??
-        # self.game_map = game_map
-        self.parent = game_map
+    def __init__(self,engine: Engine):
+        # TODO : try no engine parameters and initialize parent after creation (in calling place) ??
+        self.parent = engine
         self.shooter:Actor = None
         self.shooter_xy: Tuple[int, int] = None
         self.target: Entity = None
@@ -54,7 +54,7 @@ class FireLine:
         self.target_xy = target_xy
         
         self.path = self.get_path()
-        self.target = self.parent.get_target_at_location(*self.target_xy)
+        self.target = self.parent.game_map.get_target_at_location(*self.target_xy)
         self.entities = self.get_entities()
 
         return
@@ -95,7 +95,7 @@ class FireLine:
     
         for [i, j] in reversed(fire_line[1:-1]):
             # check walls. 
-            if not self.parent.tiles["walkable"][i,j]:
+            if not self.parent.game_map.tiles["walkable"][i,j]:
                 wall_cover_tmp += 1
 
         # if clear line of fire, we won't get better.
@@ -140,7 +140,7 @@ class FireLine:
             bend_y = self.shooter.y + dy
             
             # cannot bend into a wall
-            if not self.parent.tiles["walkable"][bend_x,bend_y]:
+            if not self.parent.game_map.tiles["walkable"][bend_x,bend_y]:
                 continue
 
             fire_line = tcod.los.bresenham((bend_x,bend_y), self.target_xy).tolist()
@@ -148,7 +148,7 @@ class FireLine:
             wall_cover_tmp = 0
             for [i, j] in reversed(fire_line[1:-1]): 
                 # check if any wall is in between
-                if not self.parent.tiles["walkable"][i,j]:
+                if not self.parent.game_map.tiles["walkable"][i,j]:
                     wall_cover_tmp += 1
 
             if wall_cover_tmp < wall_cover:
@@ -166,23 +166,23 @@ class FireLine:
         result = []
         skip_walls = True
         for [i, j] in self.path[:-1]:
-            if skip_walls and self.parent.tiles["walkable"][i,j]:
+            if skip_walls and self.parent.game_map.tiles["walkable"][i,j]:
                 skip_walls = False
 
-            entity = self.parent.get_target_at_location(i,j)
+            entity = self.parent.game_map.get_target_at_location(i,j)
             if entity:
                 result.append(entity)
-            if not self.parent.tiles["walkable"][i,j]:
+            if not self.parent.game_map.tiles["walkable"][i,j]:
                 if not skip_walls:
-                    entity = self.parent.wall
+                    entity = self.parent.game_map.wall
                     result.append(entity)
 
         # for [i, j] in self.path[:-1]:
-        #     entity = self.parent.get_target_at_location(i,j)
+        #     entity = self.parent.game_map.get_target_at_location(i,j)
         #     if entity:
         #         result.append(entity)
-        #     if not self.parent.tiles["walkable"][i,j]:
-        #         entity = self.parent.wall
+        #     if not self.parent.game_map.tiles["walkable"][i,j]:
+        #         entity = self.parent.game_map.wall
         #         result.append(entity)
 
         return result
@@ -192,7 +192,7 @@ class FireLine:
         and save them in this fire_line"""
 
         if (self.shooter_xy+target_xy) in list(self.combat_stat):
-            # self.parent.engine.logger.debug(f"Fire line combat_stat cache : {(self.shooter_xy+target_xy)}:{self.combat_stat[(self.shooter_xy+target_xy)]}")
+            # self.parent.logger.debug(f"Fire line combat_stat cache : {(self.shooter_xy+target_xy)}:{self.combat_stat[(self.shooter_xy+target_xy)]}")
             return self.combat_stat[(self.shooter_xy+target_xy)]
 
         cache = False
@@ -220,9 +220,9 @@ class FireLine:
                     cover += max(0, entity.size.value + 1 - target_size)
                 if target.is_actor and target.hunker_stack and len(self.path) > 1:
                     i,j = self.path[-2]
-                    entity = self.parent.get_target_at_location(i,j)
-                    if not entity and not self.parent.tiles["walkable"][i,j]:
-                        entity = self.parent.wall
+                    entity = self.parent.game_map.get_target_at_location(i,j)
+                    if not entity and not self.parent.game_map.tiles["walkable"][i,j]:
+                        entity = self.parent.game_map.wall
                     if entity: 
                         cover+= target.hunker_stack*(entity.size.value + 1 - target_size)
 
@@ -234,7 +234,7 @@ class FireLine:
                     base_attack = max(0, base_attack)
                     if self.shooter.aim_stack:
                         base_attack += 3*self.shooter.aim_stack
-                        self.parent.engine.logger.debug(f"Aim bonus: lvl{self.shooter.aim_stack}:{3*self.shooter.aim_stack}")
+                        self.parent.logger.debug(f"Aim bonus: lvl{self.shooter.aim_stack}:{3*self.shooter.aim_stack}")
 
                 base_defense = target.fightable.defense
             cache = True
@@ -247,9 +247,9 @@ class FireLine:
             cover,base_attack,base_defense = 0,0,0
 
             
-        if not (self.shooter is self.parent.engine.player and target is self.parent.engine.player) and cache:
+        if not (self.shooter is self.parent.player and target is self.parent.player) and cache:
             self.combat_stat[self.shooter_xy+target_xy] = (base_attack, base_defense, cover)
-            self.parent.engine.logger.debug(f"Combat_stat add cache : {(self.shooter_xy+target_xy)}:{self.combat_stat[(self.shooter_xy+target_xy)]}")
+            self.parent.logger.debug(f"Combat_stat add cache : {(self.shooter_xy+target_xy)}:{self.combat_stat[(self.shooter_xy+target_xy)]}")
 
         return (base_attack, base_defense, cover)
 

@@ -494,7 +494,7 @@ class SingleRangedAttackHandler(SelectIndexHandler):
     ):
         super().__init__(engine=engine, default_select=default_select, extra_confirm=extra_confirm)
         self.callback = callback
-        self.engine.game_map.player_lof.compute(shooter= self.engine.player, target_xy=(self.x, self.y))
+        self.engine.player_lof.compute(shooter= self.engine.player, target_xy=(self.x, self.y))
 
     def on_index_selected(self, x: int, y: int) -> Optional[Action]:
         return self.callback((x, y))
@@ -507,7 +507,7 @@ class SingleRangedAttackHandler(SelectIndexHandler):
     def ev_keydown(self, event: tcod.event.KeyDown) -> ActionOrHandler | None:
         action_handler= super().ev_keydown(event)
         if self.engine.game_map.visible[self.x,self.y]:
-            self.engine.game_map.player_lof.compute(shooter= self.engine.player, target_xy=(self.x, self.y))
+            self.engine.player_lof.compute(shooter= self.engine.player, target_xy=(self.x, self.y))
 
         return action_handler
 
@@ -517,7 +517,7 @@ class SingleRangedAttackHandler(SelectIndexHandler):
         if self.engine.game_map.visible[self.x,self.y]:
             console = renderer.console
 
-            lof = self.engine.game_map.player_lof
+            lof = self.engine.player_lof
             for [i, j] in lof.path: 
                 if self.engine.game_map.tiles["light"]["ch"][i,j] == ord("#"):
                     console.rgb["bg"][renderer.shift(i,j)] = color.gray
@@ -540,19 +540,19 @@ class SingleRangedAttackHandler(SelectIndexHandler):
                     weapon_name = f"({lof.target.equipment.weapon.name.capitalize()})"
                 except AttributeError:
                     weapon_name = " "
-                ATT, DEF, COV = self.engine.game_map.player_lof.get_hit_stat(target_xy=(lof.target_xy),target=lof.target)
+                ATT, DEF, COV = self.engine.player_lof.get_hit_stat(target_xy=(lof.target_xy),target=lof.target)
                 console.print(x=X_info,y=5,string=f"Target:{lof.target.name.capitalize()} {weapon_name}")
                 console.print(x=X_info,y=6,string=f"Distance:{len(lof.path)} / Armor:{armor}")
                 console.print(x=X_info,y=7,string=f"Att:{ATT} vs Def:{DEF}+Cov:{COV}")
 
                 if lof.target.is_actor:
-                    self.engine.game_map.hostile_lof.compute(shooter=lof.target, target_xy=(self.engine.player.x, self.engine.player.y))
-                    ATT, DEF, COV = self.engine.game_map.hostile_lof.get_hit_stat(target_xy=(self.engine.player.x, self.engine.player.y), target=self.engine.player)
+                    self.engine.hostile_lof.compute(shooter=lof.target, target_xy=(self.engine.player.x, self.engine.player.y))
+                    ATT, DEF, COV = self.engine.hostile_lof.get_hit_stat(target_xy=(self.engine.player.x, self.engine.player.y), target=self.engine.player)
                     console.print(x=X_info,y=8,string=  "   Retaliation:",fg=color.b_darkgray)
                     console.print(x=X_info,y=9,string=f"   Att:{ATT} vs Def:{DEF}+Cov:{COV}",fg=color.b_darkgray)
 
             if not lof.target:
-                ATT, DEF, COV = self.engine.game_map.player_lof.get_hit_stat(target_xy=(lof.target_xy))
+                ATT, DEF, COV = self.engine.player_lof.get_hit_stat(target_xy=(lof.target_xy))
                 console.print(x=X_info,y=5,string=f"No target", fg=color.b_darkgray)
                 console.print(x=X_info,y=6,string=f"Distance:{len(lof.path)} / Cov:{COV}", fg=color.b_darkgray)
            
@@ -591,7 +591,7 @@ class AreaRangedAttackHandler(SelectIndexHandler):
         console = renderer.console
 
         if self.engine.game_map.visible[self.x,self.y]:
-            lof = self.engine.game_map.player_lof
+            lof = self.engine.player_lof
 
             for [i, j] in lof.path:
                 if self.engine.game_map.tiles["light"]["ch"][i,j] == ord("#"):
@@ -633,14 +633,14 @@ class AreaRangedAttackHandler(SelectIndexHandler):
                 weapon_name = " "
 
             if lof.target and lof.target != self.engine.player:
-                ATT, DEF, COV = self.engine.game_map.player_lof.get_hit_stat(target_xy=(lof.target_xy), target=lof.target)
+                ATT, DEF, COV = self.engine.player_lof.get_hit_stat(target_xy=(lof.target_xy), target=lof.target)
                 console.print(x=X_info,y=5,string=f"Target:{lof.target.name.capitalize()} {weapon_name}")
                 console.print(x=X_info,y=6,string=f"Distance:{len(lof.path)} / Armor:{armor}")
                 console.print(x=X_info,y=7,string=f"Att:{ATT} vs Def:{DEF}+Cov:{COV}")
 
 
             if not lof.target:
-                ATT, DEF, COV = self.engine.game_map.player_lof.get_hit_stat(target_xy=(lof.target_xy))
+                ATT, DEF, COV = self.engine.player_lof.get_hit_stat(target_xy=(lof.target_xy))
                 console.print(x=X_info,y=5,string=f"No target")
                 console.print(x=X_info,y=6,string=f"Distance:{len(lof.path)} / Cov:{COV}")
 
@@ -658,7 +658,7 @@ class MainGameEventHandler(EventHandler):
 
         
         # Reset before player's turn
-        self.engine.game_map.hostile_lof.combat_stat = {}
+        self.engine.hostile_lof.combat_stat = {}
 
         # action
         if key in MOVE_KEYS and not (modifier & (tcod.event.KMOD_LSHIFT | tcod.event.KMOD_RSHIFT)):

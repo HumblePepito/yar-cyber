@@ -218,7 +218,7 @@ class MeleeAction(ActionWithDirection):
         if not target:
             raise exceptions.Impossible("Nothing to attack.")
 
-        fire_line = self.engine.game_map.get_fire_line(self.entity)
+        fire_line = self.engine.get_fire_line(self.entity)
         fire_line.compute(shooter=self.entity, target_xy=(target.x,target.y))
 
         hit_margin, target = hit_calculation(shooter=self.entity, target=target)
@@ -309,7 +309,7 @@ class FireAction(Action):
         """
         
         # Instead of dealing directly the damage computation, use fonction from the eqquipable
-        fire_line = self.engine.game_map.get_fire_line(self.entity)
+        fire_line = self.engine.get_fire_line(self.entity)
         item_action = ItemAction(self.entity, self.ranged_weapon.parent, tuple(fire_line.path[-1]))
 
         self.ranged_weapon.activate(item_action)
@@ -371,7 +371,7 @@ class AutoAttack(FireAction):
                 x, y = path[1]
                 return MovementAction(entity=self.entity, dx=x-self.entity.x, dy=y-self.entity.y).act()
             else:
-                self.engine.game_map.player_lof.compute(shooter=self.entity, target_xy=(target.x,target.y))
+                self.engine.player_lof.compute(shooter=self.entity, target_xy=(target.x,target.y))
                 return FireAction(self.entity, target).act()
                 
 class SwitchAutoPickup(Action):

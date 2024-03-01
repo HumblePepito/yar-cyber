@@ -21,6 +21,7 @@ import pickle
 import color
 from input_handlers import BaseEventHandler, GameOverEventHandler, MainGameEventHandler
 from turnqueue import TurnQueue
+from fire_line import FireLine
 
 if TYPE_CHECKING:
     from entity import Actor
@@ -43,6 +44,10 @@ class Engine:
         self.turnqueue: TurnQueue = TurnQueue()
         self.active_entity = None
         self.turn_count = 0
+
+        self.player_lof = FireLine(self)
+        # self.player_lof: FireLine = None
+        self.hostile_lof = FireLine(self)
 
     def turn_loop(self, handler: BaseEventHandler) -> BaseEventHandler:
         """Plays all entities and ends with player."""
@@ -173,6 +178,11 @@ class Engine:
         )
         # If a tile is "visible" it should be added to "explored".
         self.game_map.explored |= self.game_map.visible
+
+    def get_fire_line(self, shooter: Actor) -> FireLine:
+        if shooter == self.player:
+            return self.player_lof
+        return self.hostile_lof
     
     def render(self, renderer: Renderer ) -> None:
         # init of engine to provide access to render for auto handler

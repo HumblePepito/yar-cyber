@@ -18,7 +18,7 @@ def hit_calculation(shooter: Actor, target: Entity) -> Tuple(int, Entity):
     Returns
         int: None = missed, >=0 = hit margin
         entity: who is hit"""
-    fire_line = shooter.gamemap.get_fire_line(shooter)
+    fire_line = shooter.gamemap.engine.get_fire_line(shooter)
 
     if target:
         base_attack, base_defense, cover = fire_line.get_hit_stat((target.x,target.y),target)
