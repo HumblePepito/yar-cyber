@@ -199,7 +199,7 @@ class ToxicBarrel(Fightable):
         for (x,y) in cf.disk_coords((self.parent.x, self.parent.y), self.radius):
             if self.gamemap.tiles["walkable"][x,y]:
                 smoke = entity.spawn(self.gamemap,x,y)
-                smoke.ai = components.ai.Vanish(entity=smoke, previous_ai=smoke.ai, turns_remaining=4+random.randint(-1,1),)
+                smoke.ai = components.ai.FireSmoke(entity=smoke, previous_ai=smoke.ai, turns_remaining=4+random.randint(-1,1),)
 
 class ExplosiveBarrel(Fightable):
     parent: Feature
@@ -228,7 +228,7 @@ class ExplosiveBarrel(Fightable):
         for (x,y) in cf.disk_coords((self.parent.x, self.parent.y), self.radius):
             if self.gamemap.tiles["walkable"][x,y]:
                 smoke = entity.spawn(self.gamemap,x,y)
-                smoke.ai = components.ai.Vanish(entity=smoke, previous_ai=smoke.ai, turns_remaining=10+random.randint(-2,2),)
+                smoke.ai = components.ai.FireSmoke(entity=smoke, previous_ai=smoke.ai, turns_remaining=6+random.randint(-2,2),)
 
 class Smoke(Fightable): # does it need to be a Fightable? I don't think so
     parent: Feature
