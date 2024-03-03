@@ -160,7 +160,7 @@ class ConfusedEnemy(BaseAI):
             # Its possible the actor will just bump into the wall, wasting a turn.
             return BumpAction(self.entity, direction_x, direction_y,).act()
 
-class Vanish(BaseAI):
+class SmokeVanish(BaseAI):
     """
     Entity will be removed after a delay
     """
@@ -179,26 +179,35 @@ class Vanish(BaseAI):
             self.entity.ai = self.previous_ai
             self.entity.remove()
             self.entity.fightable.hp = 0 # trigger death
+            return
+        
+        if self.entity.name == "Bright Fire":
+            self.entity.color = random.choice([color.b_orange, color.b_yellow, color.n_red])
+        elif self.entity.name == "Fog":
+            self.entity.color = random.choice([color.n_gray, color.b_darkgray])
+
+        self.turns_remaining -= 1
+
+        if self.turns_remaining <= 3+random.randint(-1,1):
+            self.entity.char = "°"
+            self.entity.fightable.base_attack //= 2
+            self.engine.game_map.tiles["transparent"][self.entity.x, self.entity.y] = True
+        elif self.turns_remaining <= 6+random.randint(-1,1):
+            self.entity.char = "¤"
+            self.engine.game_map.tiles["transparent"][self.entity.x, self.entity.y] = True
         else:
-            if self.entity.name == "Bright Fire":
-                self.entity.color = random.choice([color.b_orange, color.b_yellow, color.n_red])
+            self.entity.char = "§"
 
-            self.turns_remaining -= 1
 
-            if self.turns_remaining <= 3+random.randint(-1,1):
-                self.entity.char = "°"
-                self.entity.fightable.base_attack //= 2
-                self.engine.game_map.tiles["transparent"][self.entity.x, self.entity.y] = True
-            elif self.turns_remaining <= 6+random.randint(-1,1):
-                self.entity.char = "¤"
-                self.engine.game_map.tiles["transparent"][self.entity.x, self.entity.y] = True
-            else:
-                self.entity.char = "§"
+class FireSmoke(SmokeVanish):
+    def act(self) -> None:
+        super().act()
 
-            # deals damage or apply status
-            target_actor = self.engine.game_map.get_actor_at_location(self.entity.x, self.entity.y)
-            if target_actor:
-                return ChokeAction(self.entity).act()
+        # deals damage or apply status
+        target_actor = self.engine.game_map.get_actor_at_location(self.entity.x, self.entity.y)
+        if target_actor:
+            return ChokeAction(self.entity).act()
+
 
 class ExploreMap(BaseAI):
 
