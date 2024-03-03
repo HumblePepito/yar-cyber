@@ -571,7 +571,7 @@ class AreaRangedAttackHandler(SelectIndexHandler):
         super().__init__(engine=engine, default_select=default_select, extra_confirm=extra_confirm)
         self.radius = radius
         self.callback = callback
-        self.engine.game_map.player_lof.compute(shooter= self.engine.player, target_xy=(self.x, self.y))
+        self.engine.player_lof.compute(shooter= self.engine.player, target_xy=(self.x, self.y))
 
     def clamp(self, dx,dy) -> Tuple[int,int]:
         """Clamp the cursor index to the view area."""
@@ -580,7 +580,7 @@ class AreaRangedAttackHandler(SelectIndexHandler):
 
     def ev_keydown(self, event: tcod.event.KeyDown) -> ActionOrHandler | None:
         action_handler= super().ev_keydown(event)
-        self.engine.game_map.player_lof.compute(shooter= self.engine.player, target_xy=(self.x, self.y))
+        self.engine.player_lof.compute(shooter= self.engine.player, target_xy=(self.x, self.y))
 
         return action_handler
 
