@@ -585,8 +585,7 @@ class AreaRangedAttackHandler(SelectIndexHandler):
         return action_handler
 
     def on_render(self, renderer: Renderer) -> None:
-        """Highlight the zone under the cursor."""
-        """TODO : take care of collision with walls"""
+        """Highlight the zone under the cursor while targeting."""
         super().on_render(renderer)
         console = renderer.console
 
@@ -643,6 +642,10 @@ class AreaRangedAttackHandler(SelectIndexHandler):
                 ATT, DEF, COV = self.engine.player_lof.get_hit_stat(target_xy=(lof.target_xy))
                 console.print(x=X_info,y=5,string=f"No target")
                 console.print(x=X_info,y=6,string=f"Distance:{len(lof.path)} / Cov:{COV}")
+        else:
+            # target is not visible (behind walls or in a cloud or other)
+            # then, on-render must take into account explored wall
+            pass
 
     def on_index_selected(self, x: int, y: int) -> Optional[Action]:
         return self.callback((x, y))

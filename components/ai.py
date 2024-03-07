@@ -12,12 +12,7 @@ import exceptions
 import color 
 
 from actions import Action, BumpAction, MeleeAction, MovementAction, PickupAction, Reload, WaitAction, ChokeAction, FireAction
-
-import turnqueue
-
-if TYPE_CHECKING:
-    from entity import Actor
-
+from entity import Actor, Hazard
 class BaseAI(Action):
     def __init__(self, entity: Actor):
         super().__init__(entity)
@@ -165,11 +160,13 @@ class SmokeVanish(BaseAI):
     Entity will be removed after a delay
     """
     def __init__(
-        self, entity: Actor, previous_ai: Optional[BaseAI], turns_remaining: int
+        self, entity: Actor, previous_ai: Optional[BaseAI], turns_remaining: int, spawn_others: bool = False
     ):
         super().__init__(entity)
         self.previous_ai = previous_ai
         self.turns_remaining = turns_remaining
+        self.init_delay = turns_remaining
+        self.spawn_others = spawn_others
         self.engine.game_map.tiles["transparent"][self.entity.x, self.entity.y] = False
         
     def act(self) -> None:
@@ -181,22 +178,43 @@ class SmokeVanish(BaseAI):
             self.entity.fightable.hp = 0 # trigger death
             return
         
-        if self.entity.name == "Bright Fire":
-            self.entity.color = random.choice([color.b_orange, color.b_yellow, color.n_red])
-        elif self.entity.name == "Fog":
-            self.entity.color = random.choice([color.n_gray, color.b_darkgray])
+        self.entity.color = self.get_cloud_color()
 
-        self.turns_remaining -= 1
-
-        if self.turns_remaining <= 3+random.randint(-1,1):
+        if self.turns_remaining <= self.init_delay//3 +random.randint(-1,1):
             self.entity.char = "°"
             self.entity.fightable.base_attack //= 2
             self.engine.game_map.tiles["transparent"][self.entity.x, self.entity.y] = True
-        elif self.turns_remaining <= 6+random.randint(-1,1):
+        elif self.turns_remaining <= self.init_delay//2+random.randint(-1,1):
             self.entity.char = "¤"
             self.engine.game_map.tiles["transparent"][self.entity.x, self.entity.y] = True
         else:
             self.entity.char = "§"
+            if self.spawn_others and random.random() > 0.9:
+                self.turns_remaining +=2
+                for (x,y) in cf.disk_coords((self.entity.x,self.entity.y), 1):
+                    if self.engine.game_map.tiles["walkable"][x,y]:
+                        if not isinstance(self.engine.game_map.get_hazard_at_location(x,y), Hazard):
+                            entity = self.get_cloud()
+                            smoke = entity.spawn(self.engine.game_map,x,y)
+                            smoke.ai = SmokeVanish(entity=smoke, previous_ai=smoke.ai, turns_remaining=self.turns_remaining+random.randint(0,2),spawn_others=False)
+
+
+        self.turns_remaining -= 1
+
+    def get_cloud_color(self) -> Hazard:
+        if self.entity.name == "Fog":
+            return random.choice([color.n_gray, color.b_darkgray])
+        elif self.entity.name == "Bright Fire":
+            return random.choice([color.b_orange, color.b_yellow, color.n_red])
+
+    def get_cloud(self) -> Hazard:
+        import entity_factories
+        if self.entity.name == "Fog":
+            return entity_factories.fog_cloud
+        elif self.entity.name == "Bright Fire":
+            return entity_factories.fire_cloud
+
+
 
 
 class FireSmoke(SmokeVanish):

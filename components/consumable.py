@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 from typing import Optional, TYPE_CHECKING
+import random
+import util.calc_functions as cf
 
 import actions
 import color
 import components.ai
+import entity_factories
 
 from components.inventory import Inventory
 from components.base_component import BaseComponent
@@ -35,7 +38,6 @@ class Consumable(BaseComponent):
 
         if isinstance(inventory, Inventory):
             inventory.items.remove(entity) 
-        #self.engine.player.inventory.items.remove(entity) # là, c'est sûr que c'est un Inventory
     
 class HealingConsumable(Consumable):
     def __init__(self, amount: int):
@@ -163,3 +165,31 @@ class FireballConsumable(Consumable):
         
         self.consume()
 
+class SmokeGrenadeConsumable(Consumable):
+    def __init__(self, radius: int, delay: int):
+        self.radius = radius
+        self.delay = delay
+
+    def get_action(self, consumer: Actor) -> Optional[ActionOrHandler]:
+        self.engine.message_log.add_message(
+            "Select a target location.", color.needs_target
+        )
+        return AreaRangedAttackHandler(
+            self.engine,
+            self.radius,
+            callback=lambda xy: actions.ItemAction(consumer, self.parent, xy),
+        )
+    
+    def activate(self, action: actions.ItemAction) -> None:
+        target_xy = action.target_xy
+
+        if not self.engine.game_map.visible[target_xy]:
+            raise Impossible("You cannot target an area that you cannot see.")
+
+        entity = entity_factories.fog_cloud
+        for (x,y) in cf.disk_coords(target_xy, self.radius):
+            if self.gamemap.tiles["walkable"][x,y]:
+                smoke = entity.spawn(self.gamemap,x,y)
+                smoke.ai = components.ai.SmokeVanish(entity=smoke, previous_ai=smoke.ai, turns_remaining=self.delay+random.randint(-2,2), spawn_others=True, )
+
+        # self.consume()

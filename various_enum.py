@@ -15,6 +15,7 @@ class ItemType(Enum):
     DRUG = auto()
     GOLD = auto()
     SCROLL = auto()
+    GRENADE = auto()
 
 class SizeClass(Enum):
     TINY = auto()

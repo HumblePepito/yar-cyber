@@ -117,6 +117,12 @@ class GameMap:
                 return feature
         return None
 
+    def get_hazard_at_location(self, x: int, y: int) -> Optional[Hazard]:
+        for hazard in self.hazards:
+            if hazard.x == x and hazard.y == y:
+                return hazard
+        return None
+
     def get_target_at_location(self, x: int, y: int) -> Optional[Entity]:
         for entity in self.entities:
             if entity.x == x and entity.y == y:

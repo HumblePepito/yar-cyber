@@ -4,7 +4,7 @@ from components.ai import BaseAI,HostileEnemy
 from components.fightable import Fighter, Barrel, ToxicBarrel, ToxicSmoke
 import components.fightable
 
-from components import consumable, equippable, activable
+from components import consumable, equippable
 from components.equipment import Equipment
 from components.inventory import Inventory
 from components.level import Level
@@ -35,6 +35,13 @@ fireballScroll = Item(
     char="?", color=(255, 63, 0), name="Fireball Scroll", item_type=ItemType.SCROLL, consumable=consumable.FireballConsumable(radius=1,damage=18),
 )
 
+smokeGrenade = Item(
+    char = "(",
+    color=color.n_gray,
+    name="Smoke Grenade",
+    item_type=ItemType.GRENADE,
+    consumable=consumable.SmokeGrenadeConsumable(radius=2, delay=8)
+)
 
 dagger = Item(
     char=")",
@@ -99,6 +106,7 @@ explosive_barrel = Feature(
 
 toxic_smoke = Hazard(
     char="§", color=color.n_green, name="Toxic smoke", blocks_view=True, blocks_movement=False,fightable=ToxicSmoke(hp=1,base_attack=2),ai_cls=BaseAI ) # TODO : change attack by damage here and in chokeaction
+
 fire_cloud = Hazard(
     char="§",
     color=color.b_orange,
@@ -109,6 +117,16 @@ fire_cloud = Hazard(
     ai_cls=BaseAI,
     render_order= RenderOrder.CLOUD )
 
+fog_cloud = Hazard(
+    char="§",
+    color=color.n_gray,
+    name="Fog",
+    blocks_view=True,
+    blocks_movement=False,
+    fightable=components.fightable.Smoke(hp=1),
+    ai_cls=BaseAI,
+    render_order= RenderOrder.CLOUD )
+
 player = Actor(
     char="@",
     color=color.b_white,
@@ -116,7 +134,7 @@ player = Actor(
     ai_cls=HostileEnemy,
     equipment=Equipment(),
     fightable=Fighter(hp=30, base_defense=4, base_attack=8, base_armor=2,regen_rate=0),
-    inventory=Inventory(26, [gun,grenade_launcher,chain_mail,]),
+    inventory=Inventory(26, [gun,grenade_launcher,chain_mail,smokeGrenade,rifle,]),
     level=Level(level_up_base=200),
 )
 orc = Actor(
