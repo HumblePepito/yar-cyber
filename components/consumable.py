@@ -192,4 +192,4 @@ class SmokeGrenadeConsumable(Consumable):
                 smoke = entity.spawn(self.gamemap,x,y)
                 smoke.ai = components.ai.SmokeVanish(entity=smoke, previous_ai=smoke.ai, turns_remaining=self.delay+random.randint(-2,2), spawn_others=True, )
 
-        # self.consume()
+        self.consume()
