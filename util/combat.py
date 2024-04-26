@@ -68,7 +68,7 @@ def stray_fire(fire_line) -> Tuple(int, Entity):
             entity = random.choices(fire_line.entities,entity_weighted_chance_values)
             hit_margin = 0
             target = entity[0]
-            fire_line.parent.engine.logger.debug(f"Interception:{target.name}")
+            fire_line.parent.logger.debug(f"Interception:{target.name}")
         else:
             if target:
                 hit_margin = None
