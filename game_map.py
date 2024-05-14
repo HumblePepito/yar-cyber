@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterable, Iterator, Optional, TYPE_CHECKING
+from typing import Iterable, Iterator, List, Optional, Tuple, TYPE_CHECKING
 # NamedTuple : https://stackoverflow.com/questions/2970608/what-are-named-tuples-in-python#2970722
 import numpy as np  # type: ignore
 import random
@@ -30,6 +30,7 @@ class GameMap:
         self.downstairs_location =(0,0)
 
         self.wall: Entity = None
+        self.trails: List[Tuple[int, int]] = []
 
     
     @property
@@ -198,6 +199,11 @@ class GameMap:
                 if isinstance(entity, Item) and self.explored[entity.x, entity.y] and self.within_view(*renderer.shift(entity.x, entity.y), view_width,view_height):
                     console.print(*renderer.shift(entity.x, entity.y),
                                   entity.char, fg=entity.color)
+        
+        for trail in self.trails[:-1]:
+            if self.within_view(*renderer.shift(*trail), view_width,view_height):
+                console.print(*renderer.shift(*trail), " ", bg=(170,170,170))
+            self.trails = []
 
 class GameWorld:
     """

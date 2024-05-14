@@ -44,6 +44,7 @@ def main(stdscr) -> None:
     util.var_global.logger = logger
     logger.info(f"Command line parameters: {config}")
     util.var_global.seed_init = config['seed']
+    util.var_global.instant_travel = config['instant_travel']
 
     handler: input_handlers.BaseEventHandler = setup_game.MainMenu() # gets back with MainGameEventHandler
 
@@ -178,6 +179,7 @@ parser.add_argument('-c', '--curses', action='store_true', help='use curses rend
 parser.add_argument('-s', '--seed', type=int, help='fixed seed for static generation (new game only)')
 parser.add_argument('-t', '--tiles', dest='png' , type=str, help="path to a specific PNG tiles file (charmap CP437)")
 parser.add_argument('-w', '--wizard', action='store_true', help='start in wizard mode')
+parser.add_argument('-i', '--instant_travel', action='store_true', help='switch to instant travel with trails')
 args = parser.parse_args()
 config = vars(args)
 

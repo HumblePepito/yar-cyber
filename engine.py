@@ -11,9 +11,10 @@ from util.calc_functions import progress_color
 from various_enum import ItemType
 
 
-#from actions import EscapeAction, MovementAction, BumpAction, MeleeAction
 from render_functions import render_ascii_bar, render_ascii_slider
 from message_log import MessageLog
+
+import util.var_global as uv
 
 import exceptions
 import lzma
@@ -110,10 +111,15 @@ class Engine:
         while True:
             self.active_entity = self.turnqueue.invoke_next()
             if self.active_entity is self.player:
-                # render all previous actions
-                self.renderer.console.clear()
-                handler.on_render(renderer=self.renderer)
-                self.renderer.context.present(self.renderer.console, keep_aspect= True, integer_scaling=True)
+                
+                if uv.instant_travel:
+                    # keep track of the trails
+                    self.game_map.trails.append([self.player.x, self.player.y])
+                else:
+                    # render all previous actions
+                    self.renderer.console.clear()
+                    handler.on_render(renderer=self.renderer)
+                    self.renderer.context.present(self.renderer.console, keep_aspect= True, integer_scaling=True)
 
                 ##### Events that stops the auto loop #####
                 

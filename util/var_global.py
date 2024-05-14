@@ -7,3 +7,4 @@ global seed_init
 xterm = None
 logger = None
 seed_init = -1
+instant_travel = True
