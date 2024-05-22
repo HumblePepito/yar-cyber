@@ -585,7 +585,7 @@ class AreaRangedAttackHandler(SelectIndexHandler):
         return action_handler
 
     def on_render(self, renderer: Renderer) -> None:
-        """Highlight the zone under the cursor while targeting."""
+        """Highlight the blast zone around the cursor while targeting."""
         super().on_render(renderer)
         console = renderer.console
 
@@ -613,13 +613,18 @@ class AreaRangedAttackHandler(SelectIndexHandler):
 
             for i in range(-self.radius, self.radius+1):
                 for j in range(-self.radius, self.radius+1):
-                    if self.engine.game_map.get_target_at_location(x+i,y+j):
-                        console.rgb["bg"][renderer.shift(x+i,y+j)] = color.n_gray
-                        console.rgb["fg"][renderer.shift(x+i,y+j)] = color.white
+                    if self.engine.game_map.explored[x+i,y+j]:
+                        if self.engine.game_map.get_target_at_location(x+i,y+j):
+                            console.rgb["bg"][renderer.shift(x+i,y+j)] = color.n_gray
+                            console.rgb["fg"][renderer.shift(x+i,y+j)] = color.white
+                        else:
+                            if self.engine.game_map.tiles["walkable"][x+i,y+j]:
+                                console.rgb["fg"][renderer.shift(x+i,y+j)] = color.n_gray
+                                console.rgb["ch"][renderer.shift(x+i,y+j)] = ord("*")
                     else:
-                        if self.engine.game_map.tiles["walkable"][x+i,y+j]:
-                            console.rgb["fg"][renderer.shift(x+i,y+j)] = color.n_gray
-                            console.rgb["ch"][renderer.shift(x+i,y+j)] = ord("*")
+                        console.rgb["fg"][renderer.shift(x+i,y+j)] = color.b_darkgray
+                        console.rgb["ch"][renderer.shift(x+i,y+j)] = ord("?")
+
 
             X_info = self.engine.renderer.view_width+1
             try:
@@ -649,6 +654,74 @@ class AreaRangedAttackHandler(SelectIndexHandler):
 
     def on_index_selected(self, x: int, y: int) -> Optional[Action]:
         return self.callback((x, y))
+
+class ConeRangedAttackHandler(SelectIndexHandler):
+    """Handles targetting for shotgun type attack."""
+
+    def __init__(
+        self,
+        engine: Engine,
+        cone: int,
+        callback: Callable[[Tuple[int, int]], Optional[Action]],
+        default_select:str = "player",
+        extra_confirm: Optional(str) = None,
+    ):
+        super().__init__(engine=engine, default_select=default_select, extra_confirm=extra_confirm)
+        self.cone = cone
+        self.callback = callback
+        self.engine.player_lof.compute(shooter= self.engine.player, target_xy=(self.x, self.y))
+
+    def clamp(self, dx,dy) -> Tuple[int,int]:
+        """Clamp the cursor index to the view area."""
+        return (max(max(self.engine.player.x-self.engine.renderer.view_width//2, 0), min(self.engine.player.x+self.engine.renderer.view_width//2,min(self.x+dx, self.engine.game_map.width - 1))),
+                max(max(self.engine.player.y-self.engine.renderer.view_height//2, 0), min(self.engine.player.y+self.engine.renderer.view_height//2,min(self.y+dy, self.engine.game_map.width - 1))))
+
+    def ev_keydown(self, event: tcod.event.KeyDown) -> ActionOrHandler | None:
+        action_handler= super().ev_keydown(event)
+        self.engine.player_lof.compute(shooter= self.engine.player, target_xy=(self.x, self.y))
+
+        return action_handler
+
+    def on_render(self, renderer: Renderer) -> None:
+        """Highlight the zone under the cursor while targeting."""
+        super().on_render(renderer)
+        console = renderer.console
+
+        lof = self.engine.player_lof
+        if lof.shooter_xy == lof.target_xy:
+            console.rgb["bg"][renderer.shift(*lof.shooter_xy)] = color.gray
+            console.rgb["fg"][renderer.shift(*lof.shooter_xy)] = color.white
+            return
+                    
+        target_area=cf.get_cone_points(start=lof.shooter_xy,end=lof.target_xy,cone_radius=self.cone,dist=5)
+        for point in target_area:
+            if not self.engine.game_map.in_bounds(*point):
+                continue
+            if self.engine.game_map.visible[point[0],point[1]] and cf.get_distance(lof.shooter_xy,point) <= 10:
+                if self.engine.game_map.tiles["light"]["ch"][point[0],point[1]] == ord("#"):
+                    pass
+                elif self.engine.game_map.get_target_at_location(*point):
+                    console.rgb["bg"][renderer.shift(*point)] = self.get_bcolor(lof.shooter_xy,point)
+                    console.rgb["fg"][renderer.shift(*point)] = self.get_fcolor(lof.shooter_xy,point)
+                else:
+                    console.rgb["fg"][renderer.shift(*point)] = self.get_bcolor(lof.shooter_xy,point)
+                    console.rgb["ch"][renderer.shift(*point)] = ord("*")
+
+    def get_bcolor(self,start: Tuple[int,int], end: Tuple[int,int]) -> Tuple[int,int,int]:
+        if cf.get_distance(start, end) < 3:
+            return color.b_white
+        elif cf.get_distance(start, end) < 6:
+            return color.n_gray
+        return color.b_darkgray
+
+    def get_fcolor(self,start: Tuple[int,int], end: Tuple[int,int]) -> Tuple[int,int,int]:
+        if cf.get_distance(start, end) < 3:
+            return color.n_black
+        return color.b_white
+
+    def on_index_selected(self, x: int, y: int) -> Optional[Action]:
+        return self.callback((x, y))
+
 
 class MainGameEventHandler(EventHandler):
 

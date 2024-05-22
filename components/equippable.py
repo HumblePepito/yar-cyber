@@ -15,7 +15,7 @@ from components.base_component import BaseComponent
 from various_enum import EquipmentSlot, SizeClass
 from  util.combat import damage_calculation, hit_calculation, stray_fire
 
-from input_handlers import SingleRangedAttackHandler, AreaRangedAttackHandler, ActionOrHandler
+from input_handlers import AreaRangedAttackHandler, ActionOrHandler, ConeRangedAttackHandler, SingleRangedAttackHandler
 from exceptions import Impossible
 
 from entity import Actor, Entity, Item
@@ -58,12 +58,14 @@ class RangedWeapon(Equippable):
         base_range: int = 1,
         clip_size: int=0,
         radius: int = None,
+        cone: int = None,
     ):
         super().__init__(equipment_type=equipment_type, attack_bonus=attack_bonus)
         self.base_damage = base_damage
         self.base_range = base_range
         self.clip_size = clip_size
         self.radius = radius
+        self.cone = cone
         self.current_clip = clip_size
     
     def get_fire_action(self, shooter: Actor) -> Optional[ActionOrHandler]:
@@ -83,7 +85,14 @@ class RangedWeapon(Equippable):
                 default_select="enemy",
                 extra_confirm="f",
             )
-
+        elif self.cone:
+            return ConeRangedAttackHandler(
+                self.engine,
+                self.cone,
+                callback=lambda xy: actions.ItemAction(shooter, self.parent, xy),
+                default_select="enemy",
+                extra_confirm="f",
+            )
         else:
             return SingleRangedAttackHandler(
                 self.engine,
@@ -98,6 +107,10 @@ class RangedWeapon(Equippable):
         shooter = action.entity # player or hostile actor
         target = action.target_actor # either Actor, Item or None
         weapon = self.parent
+
+        if self.cone:
+            self.activate_shotgun_type(action)
+            return
 
         if not self.engine.game_map.visible[target_xy]:
             raise Impossible("You cannot target an area that you cannot see.")
@@ -116,7 +129,7 @@ class RangedWeapon(Equippable):
             else:
                 raise NotImplementedError                    
 
-            if self.radius is not None: # self radius can be 0 for a on square only effet
+            if self.radius is not None: # self radius can be 0 for a one square only effet
                 # TODO : howto join 2 generator ? TODO : use onlus cf.disk to avoid parsing the whole map
                 for i,j in cf.disk_coords(target_xy,self.radius):
                     blast_target = self.engine.game_map.get_target_at_location(i,j)
@@ -150,8 +163,7 @@ class RangedWeapon(Equippable):
                         console.rgb["fg"][self.engine.renderer.shift(x,y)] = color.n_red  # add color of weapon 
                         console.rgb["ch"][self.engine.renderer.shift(x,y)] = ord("*")
                 context.present(console, keep_aspect= True, integer_scaling=True)
-                time.sleep(0.05)
-
+                time.sleep(0.05)         
             else:
                 if target == None:
                     self.engine.message_log.add_message(f"{shooter.name.capitalize()} shoots an empty space.")
@@ -219,6 +231,42 @@ class RangedWeapon(Equippable):
 
         return hit_margin, target
 
+    def activate_shotgun_type(self, action: actions.ItemAction) -> None:
+        target_xy = action.target_xy
+        shooter = action.entity # player or hostile actor
+        target = action.target_actor # either Actor, Item or None
+        weapon = self.parent
+
+        lof = self.engine.get_fire_line(shooter)
+        target_area=cf.get_cone_points(start=lof.shooter_xy,end=lof.target_xy,cone_radius=self.cone,dist=5)
+
+        for point in target_area:
+            target = self.engine.game_map.get_target_at_location(*point)
+            if target:
+                lof.compute(shooter,(target.x,target.y))
+                hit_margin, target = hit_calculation(shooter, target)
+                damage, armor_reduction = damage_calculation(weapon, target, max(hit_margin,0))
+                if cf.get_distance((shooter.x, shooter.y),(target.x, target.y)) <4:
+                    pass
+                if cf.get_distance((shooter.x, shooter.y),(target.x, target.y)) <7:
+                    damage = damage//2
+                else:
+                    damage = damage//4
+                
+                if target.is_visible:
+                    self.engine.message_log.add_message(
+                        f"The {target.name} is sheared by bullets, taking {damage} damage!"
+                    )
+                else:
+                    self.engine.message_log.add_message(
+                        f"Your hear a nearby screaming."
+                    )
+                target.fightable.take_damage(damage)
+
+
+        # use ammunition
+        self.current_clip -= 1
+
 # TODO : move to its own file
 class Sling(RangedWeapon):
     def __init__(self):
@@ -242,6 +290,14 @@ class Rifle(RangedWeapon):
 class GrenadeLauncher(RangedWeapon):
     def __init__(self):
         super().__init__(equipment_type=EquipmentSlot.WEAPON, base_damage=5, base_range=4, clip_size=1, radius=1)
+
+class Shotgun(RangedWeapon):
+    def __init__(self):
+        super().__init__(equipment_type=EquipmentSlot.WEAPON,
+                        base_damage=12,
+                        base_range=3,
+                        clip_size=1,
+                        cone=4,)
 
 class Dagger(MeleeWeapon):
     def __init__(self):

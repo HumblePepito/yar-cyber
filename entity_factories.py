@@ -87,6 +87,13 @@ rifle = Item(
     equippable=equippable.Rifle(),
     item_type= ItemType.RANGED_WEAPON
 )
+shotgun = Item(
+    char=")",
+    color=color.n_red,
+    name="Shotgun",
+    equippable=equippable.Shotgun(),
+    item_type= ItemType.RANGED_WEAPON
+)
 grenade_launcher = Item(
     char=")",
     color=color.b_orange,
@@ -134,7 +141,7 @@ player = Actor(
     ai_cls=HostileEnemy,
     equipment=Equipment(),
     fightable=Fighter(hp=30, base_defense=4, base_attack=8, base_armor=2,regen_rate=0),
-    inventory=Inventory(26, [gun,grenade_launcher,chain_mail,smokeGrenade,rifle,]),
+    inventory=Inventory(26, [gun,grenade_launcher,chain_mail,smokeGrenade,rifle,shotgun,]),
     level=Level(level_up_base=200),
 )
 orc = Actor(

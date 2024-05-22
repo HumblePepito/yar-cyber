@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import List, Tuple, TYPE_CHECKING
 
 import numpy as np
+import math
 import line_types
 import tcod
 import color
@@ -117,3 +118,54 @@ def progress_color(current_value: int, value:int) -> Tuple[int,int,int]:
         return color.n_purple
     else:
         return color.n_red
+
+def get_distance(start: Tuple[int,int], end: Tuple[int,int]) -> float:
+    return math.sqrt((start[0] - end[0])**2+(start[1] - end[1])**2)
+
+def get_project_point(start: Tuple[int,int], end: Tuple[int,int], dist: int) -> Tuple[int,int]:
+    """Returns the coordinates of the point on the (`start,end`) ray at distance `dist` from `start`"""
+    x=end[0]-start[0]
+    y=end[1]-start[1]
+    r=math.sqrt(x*x+y*y)
+    alpha=math.acos(x/r)
+    if y<0:
+        alpha=-alpha
+
+    return (round(start[0]+dist*math.cos(alpha)), round(start[1]+dist*math.sin(alpha)))
+
+def get_cone_points(start: Tuple[int,int], end: Tuple[int,int], cone_radius:int, dist:int =10) -> List[Tuple[int,int]]:
+    """Returns all the points in the cone of length `dist` and radius `cone_radius` without `start` point"""
+    cone_points=np.array([start],dtype=np.int32)
+    result=cone_points
+    # extension to 10
+    end=get_project_point(start,end,10)
+    # a point, on a perpenducular segment
+    perp1=( start[1]-end[1]+end[0],
+           -start[0]+end[0]+end[1] )
+
+    # # add each rays
+    # for i in range(-cone_radius,cone_radius+1):
+    #     cone_point=get_project_point(end,perp1,i)
+    #     segment=tcod.los.bresenham(start,cone_point)
+    #     cone_points=np.vstack((cone_points,segment)) # or concatenate)
+
+    # borders
+    cone_point1=get_project_point(end,perp1,-cone_radius)
+    cone_point2=get_project_point(end,perp1,cone_radius)
+    segment1=tcod.los.bresenham(start,cone_point1)
+    segment2=tcod.los.bresenham(start,cone_point2)
+    top=tcod.los.bresenham(cone_point1,cone_point2)
+    cone_points=np.vstack((segment1,segment2,top)) # or concatenate)
+
+    # fill the area
+    xmin=min(start[0],cone_point1[0],cone_point2[0])
+    xmax=max(start[0],cone_point1[0],cone_point2[0])
+
+    # https://stackoverflow.com/questions/1962980/selecting-rows-from-a-numpy-ndarray
+    for i in range(xmin,xmax+1):
+        ymin=np.amin(cone_points[cone_points[:,0]==i][:,1])
+        ymax=np.amax(cone_points[cone_points[:,0]==i][:,1])
+        result = np.vstack((result,tcod.los.bresenham((i,ymin),(i,ymax))))
+
+    return (x for x in np.unique(result,axis=0).tolist() if x != [*start]) # how to remove start from numpy.array ?
+
