@@ -35,14 +35,46 @@ def set_shorter_esc_delay_in_os():
 
 def main(stdscr) -> None:
 
-    # log tool
-    Log_Format = "%(levelname)s %(asctime)s - %(message)s"
-    logging.basicConfig(
-        filename="logfile.log", filemode="w", format=Log_Format, level=logging.DEBUG
-    )
-    logger = logging.getLogger()
-    util.var_global.logger = logger
+    # logger1 = logging.getLogger('general_logger')
+    # logger2 = logging.getLogger('some_other_logger')
+
+    # log_handler1 = logging.FileHandler(filename="logfile.log",mode="w")
+    # log_handler2 = logging.FileHandler("game.log")
+
+    # log_handler1.setFormatter(fmt=logging.Formatter(fmt="%(levelname)s %(asctime)s - %(message)s"))
+    # # log_handler1.setLevel(logging.INFO)
+
+    # logger1.addHandler(log_handler1)
+    # logger2.addHandler(log_handler2)
+
+    # print(logger1.getEffectiveLevel())
+    # logger1.setLevel(logging.INFO)
+    # print(logger1.getEffectiveLevel())
+    
+
+    # logger1.info("this will be logged to file_1 ")
+    # logger2.critical("this will be logged to file_2 ")
+
+
+
+    # technical log tool
+    logger = logging.getLogger('tech_logger')
+    logger_handler = logging.FileHandler(filename="logfile.log",mode="w")
+    logger_handler.setFormatter(fmt=logging.Formatter(fmt="%(levelname)s %(asctime)s - %(message)s"))
+    logger.addHandler(logger_handler)
+    logger.setLevel(logging.DEBUG)
+
+    # util.var_global.logger = logger
+
+    # game message log tool
+    gamelog = logging.getLogger('game_logger')
+    gamelog_handler = logging.FileHandler(filename="game.log",mode="w")
+    gamelog.addHandler(gamelog_handler)
+    gamelog.setLevel(logging.DEBUG)
+
     logger.info(f"Command line parameters: {config}")
+
+
     util.var_global.seed_init = config['seed']
     util.var_global.instant_travel = config['instant_travel']
 
@@ -136,6 +168,7 @@ def main(stdscr) -> None:
                     renderer.camera.y = engine.player.y
                     engine.logger = logger
                     engine.logger.info("Engine initialized")
+                    engine.message_log.gamelog = gamelog
                 except AttributeError:
                     engine_ok = False
             

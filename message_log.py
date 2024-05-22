@@ -2,7 +2,7 @@ from typing import List, Reversible, Tuple, Iterable
 import textwrap
 
 import tcod
-
+import logging
 import color
 
 
@@ -23,6 +23,11 @@ class Message:
 class MessageLog:
     def __init__(self) -> None:
         self.messages: List[Message] = []
+        self.gamelog: logging.Logger = logging.getLogger('game_logger')
+        gamelog_handler = logging.FileHandler(filename="game.log",mode="w")
+        self.gamelog.addHandler(gamelog_handler)
+        self.gamelog.setLevel(logging.DEBUG)
+
 
     def add_message(
         self, text: str, fg: Tuple[int, int, int] = color.n_gray, *, stack: bool = True,
@@ -36,6 +41,10 @@ class MessageLog:
             self.messages[-1].count += 1
         else:
             self.messages.append(Message(text, fg))
+        
+        # self.gamelog.info("\033["+33;1+"m"+self.messages[-1].full_text+"\033[0m")
+        self.gamelog.info("\033["+color._colorToANSI.get(fg)+"m"+self.messages[-1].full_text+"\033[0m")
+
 
     def render(
         self, console: tcod.console.Console, x: int, y: int, width: int, height: int,

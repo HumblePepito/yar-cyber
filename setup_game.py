@@ -66,7 +66,7 @@ def new_game() -> Engine:
     engine.update_fov()
 
     engine.message_log.add_message(
-        "Welcome to another sci-fi Roguelike, prepared with love, patience and python", color.welcome_text
+        "Welcome to another sci-fi Roguelike, prepared with love, patience and python", color.b_cyan
     )
 
     return engine

@@ -156,9 +156,13 @@ class GameMap:
         """Return True if x and y are inside of the bounds of this map."""
         return 0 <= x < self.width and 0 <= y < self.height
 
-    def within_view(self, x: int, y: int, view_width: int, view_height: int) -> bool:
+    def within_view(self, x: int, y: int, view_width: int =0, view_height: int =0) -> bool:
         """Return True if x and y are inside of the bounds of the view.
         x and y must have been shifted beforehand"""
+        if view_width == 0 and view_height == 0:
+            view_width = self.engine.renderer.view_width
+            view_height = self.engine.renderer.view_height
+
         return 0 <= x < view_width and 0 <= y < view_height
 
     # def render(self, renderer: Renderer, view_width: int, view_height: int) -> None:

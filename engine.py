@@ -263,7 +263,8 @@ class Engine:
                 i=i+1
 
         # section message
-        self.message_log.render(console,X_info,18,X_info,6)
+        # self.message_log.render(console,X_info,18,X_info,6)
+        self.message_log.render(console,0,23,79,1)
 
     def save_as(self, filename: str) -> None:
         """Save this Engine instance as a compressed file."""
